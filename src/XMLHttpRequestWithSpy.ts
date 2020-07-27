@@ -2,7 +2,13 @@ import {RequestCallback, TRequest, TResponse} from "./XMLHttpRequestWithSpy.type
 import {IEVersion, makeProgressEvent, toHeaderMap, toHeaderString} from "./XMLHttpRequestWithSpy.lib";
 import {Spy} from "./Spy";
 
-class XMLHttpRequestWithSpy extends XMLHttpRequest {
+export class XMLHttpRequestWithSpy implements XMLHttpRequest {
+  public readonly UNSENT: number = 0;
+  public readonly OPENED: number = 1;
+  public readonly HEADERS_RECEIVED: number = 2;
+  public readonly LOADING: number = 3;
+  public readonly DONE: number = 4;
+  
   private _xhr = new Spy.OriginalXHR();
   private _listeners: {[type: string]: Array<(this: XMLHttpRequest, ev: Event|ProgressEvent<XMLHttpRequestEventTarget>) => unknown>} = {};
   private _readyState: number = 0;
@@ -15,15 +21,26 @@ class XMLHttpRequestWithSpy extends XMLHttpRequest {
   public readyState = 0;
   public status = 0;
   public statusText = "";
-  public responseURL: string = "";
+  public timeout: number = 0;
+  public readonly upload = new XMLHttpRequestUpload();
   
   public response: Document|string|null = "";
   public responseText: string = "";
+  public responseType: XMLHttpRequestResponseType = "";
+  public responseURL: string = "";
   public responseXML: Document | null = null;
+  public withCredentials: boolean = false;
+  
+  public onreadystatechange: ((this: XMLHttpRequest, ev: Event) => unknown) | null = null;
+  public onabort: ((this: XMLHttpRequest, ev: Event) => unknown) | null = null;
+  public onerror: ((this: XMLHttpRequest, ev: Event) => unknown) | null = null;
+  public onloadstart: ((this: XMLHttpRequest, ev: Event) => unknown) | null = null;
+  public onload: ((this: XMLHttpRequest, ev: Event) => unknown) | null = null;
+  public onloadend: ((this: XMLHttpRequest, ev: Event) => unknown) | null = null;
+  public ontimeout: ((this: XMLHttpRequest, ev: Event) => unknown) | null = null;
+  public onprogress: ((this: XMLHttpRequest, ev: Event) => unknown) | null = null;
   
   constructor() {
-    super();
-    
     this._init();
   }
   
@@ -49,16 +66,6 @@ class XMLHttpRequestWithSpy extends XMLHttpRequest {
       
       this._runUntil(realReadyState);
     };
-    
-    if("overrideMimeType" in this._xhr){
-      this.overrideMimeType = function(mime: string){
-        return this._xhr.overrideMimeType.call(this._xhr, mime);
-      }
-    }
-    
-    if("upload" in this._xhr){
-      this._request.upload = this._xhr.upload;
-    }
   }
   
   public addEventListener<K extends keyof XMLHttpRequestEventMap>(
@@ -118,6 +125,10 @@ class XMLHttpRequestWithSpy extends XMLHttpRequest {
       l.call(this, event);
     }
     return true;
+  }
+  
+  public overrideMimeType(mime: string) {
+    return this._xhr.overrideMimeType.call(this._xhr, mime);
   }
   
   public open(method: string, url: string, async?: boolean, username?: string|null, password?: string|null){
@@ -194,6 +205,7 @@ class XMLHttpRequestWithSpy extends XMLHttpRequest {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
       this._xhr.upload = this.upload;
+      this._request.upload = this.upload;
     }
   
     this._transitioning = true;
@@ -457,5 +469,3 @@ class XMLHttpRequestWithSpy extends XMLHttpRequest {
     }
   }
 }
-
-Spy.setXMLHttpRequestWithSpy(XMLHttpRequestWithSpy);

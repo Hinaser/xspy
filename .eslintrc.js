@@ -221,6 +221,7 @@ module.exports = {
     ],
     "prefer-const": "error",
     "prefer-object-spread": "error",
+    "quotes": ["error", "double"],
     "quote-props": [
       "error",
       "as-needed"

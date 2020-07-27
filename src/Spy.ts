@@ -15,7 +15,7 @@ export class Spy {
     window.XMLHttpRequest = Spy.OriginalXHR;
   }
   
-  public static setXMLHttpRequestWithSpy(m: typeof XMLHttpRequest){
+  public static setXMLHttpRequestWithSpy<T extends typeof XMLHttpRequest>(m: T){
     Spy._agent = m;
   }
   
