@@ -1,10 +1,11 @@
-import {EventType, RequestHandler, ResponseHandler} from "./XMLHttpRequestWithSpy.type";
+import {EventType, RequestHandler, ResponseHandler, WindowEx} from "./index.type";
+
+declare let window: WindowEx;
 
 export class Spy {
   private static _reqListeners: RequestHandler[] = [];
   private static _resListeners: ResponseHandler[] = [];
-  private static _agent: typeof XMLHttpRequest = window.XMLHttpRequest;
-  
+  private static _agent = window.XMLHttpRequest;
   public static readonly OriginalXHR = window.XMLHttpRequest;
   
   public static enable() {
@@ -15,7 +16,7 @@ export class Spy {
     window.XMLHttpRequest = Spy.OriginalXHR;
   }
   
-  public static setXMLHttpRequestWithSpy<T extends typeof XMLHttpRequest>(m: T){
+  public static setXMLHttpRequestWithSpy(m: typeof window["XMLHttpRequest"]){
     Spy._agent = m;
   }
   

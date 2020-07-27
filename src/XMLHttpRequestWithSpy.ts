@@ -1,4 +1,4 @@
-import {RequestCallback, TRequest, TResponse} from "./XMLHttpRequestWithSpy.type";
+import {RequestCallback, TRequest, TResponse} from "./index.type";
 import {IEVersion, makeProgressEvent, toHeaderMap, toHeaderString} from "./XMLHttpRequestWithSpy.lib";
 import {Spy} from "./Spy";
 
@@ -22,7 +22,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
   public status = 0;
   public statusText = "";
   public timeout: number = 0;
-  public readonly upload = new XMLHttpRequestUpload();
+  public readonly upload = this._xhr.upload;
   
   public response: Document|string|null = "";
   public responseText: string = "";
@@ -201,12 +201,6 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     this._xhr.onerror = this.onerror;
     this._xhr.ontimeout = this.ontimeout;
     this._xhr.onprogress = this.onprogress;
-    if(this.upload){
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      this._xhr.upload = this.upload;
-      this._request.upload = this.upload;
-    }
   
     this._transitioning = true;
   
@@ -280,6 +274,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
       url: "",
       async: true,
       timeout: 0,
+      upload: xhr.upload,
     };
   }
   

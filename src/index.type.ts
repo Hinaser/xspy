@@ -1,3 +1,5 @@
+import {Spy} from "./Spy";
+
 export type EventType = "request" | "response";
 export type RequestCallback = {
   (dummyResponse: TResponse): unknown;
@@ -32,3 +34,8 @@ export type TResponse = {
   data?: Document|string|null;
   xml?: Document|null;
 };
+
+export interface WindowEx extends Window {
+  XMLHttpRequest: new() => XMLHttpRequest;
+  fetchXhrHook: typeof Spy;
+}
