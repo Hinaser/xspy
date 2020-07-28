@@ -258,10 +258,20 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
   
   public getResponseHeader(name: string): string | null {
     const lowerHeaderName = name.toLowerCase();
+    if(this.readyState < this.HEADERS_RECEIVED || !(lowerHeaderName in this._response.headers)){
+      return null;
+    }
     return this._response.headers[lowerHeaderName];
   }
   
   public getAllResponseHeaders(): string {
+    if(this.readyState < this.HEADERS_RECEIVED){
+      // According to MDN, getAllResponseHeaders returns null if headers are not yet received.
+      // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getAllResponseHeaders
+      // But lib.dom.d.ts asserts it always returns string.
+      // Don't know which is correct.
+      return "";
+    }
     return toHeaderString(this._response.headers);
   }
   
