@@ -1,5 +1,6 @@
 const childProcess = require("child_process");
 const config = require("../test.config");
+const server = require("./runHttpServer");
 
 const browserStartCommand = (()=>{
   if(process.platform === "darwin"){

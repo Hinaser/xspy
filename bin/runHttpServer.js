@@ -17,6 +17,8 @@ app.get(config.path.api.timeout, function (req, res) {
   }, 99999999);
 });
 
-app.listen(config.port);
+const server = app.listen(config.port);
 
-require("./runBrowser");
+// require("./runBrowser");
+
+module.exports = server;

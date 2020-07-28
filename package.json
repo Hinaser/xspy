@@ -5,9 +5,11 @@
   "author": "Hinaser <rindo.hinase@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "test": "node ./bin/runHttpServer.js",
+    "test": "node ./bin/runBrowser.js",
     "build": "webpack --env.production=false",
-    "build:prod": "webpack --env.production=true"
+    "build:prod": "webpack --env.production=true",
+    "coverage": "nyc instrument ./dist ./test/dist && node ./test/index.js && yarn run coverage:report",
+    "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./test/coverage --report-dir ./test/coverage"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^3.6.1",
@@ -19,6 +21,8 @@
     "express": "^4.17.1",
     "fork-ts-checker-webpack-plugin": "^5.0.7",
     "mocha": "^8.0.1",
+    "nightmare": "^3.0.2",
+    "nyc": "^15.1.0",
     "parallel-webpack": "^2.6.0",
     "terser-webpack-plugin": "^3.0.7",
     "ts-loader": "^8.0.1",
