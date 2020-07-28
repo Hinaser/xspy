@@ -20,7 +20,14 @@ nightmare
   .end()
   .then(coverage => {
     const pathToCoverage = path.join(__dirname, "coverage", "coverage.json");
-    const data = JSON.stringify(coverage);
+    let data = JSON.stringify(coverage);
+  
+    /**
+     * Since source map path will be /dist:webpack:///./src/.... which cannot be reached,
+     * modify correct src path as below.
+     */
+    data = data.replace(/webpack:\/\/\/.\/src\//g, "../src/");
+    
     const errorHandler = (err) => {
       if(err){
         exit(err);
