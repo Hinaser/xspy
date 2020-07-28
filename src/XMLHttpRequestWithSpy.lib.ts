@@ -45,6 +45,7 @@ export const toHeaderString = (headerMap: {[name: string]: string}) => {
 export const makeProgressEvent = (type: string, loaded: number, lengthComputable: boolean = false, total: number = 0) => {
   const ev: ProgressEvent<XMLHttpRequestEventTarget> = {
     ...new Event(type),
+    type,
     target: null,
     loaded,
     lengthComputable,

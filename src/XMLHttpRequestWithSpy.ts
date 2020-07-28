@@ -3,6 +3,12 @@ import {IEVersion, makeProgressEvent, toHeaderMap, toHeaderString} from "./XMLHt
 import {Spy} from "./Spy";
 
 export class XMLHttpRequestWithSpy implements XMLHttpRequest {
+  static readonly UNSENT: number = 0;
+  static readonly OPENED: number = 1;
+  static readonly HEADERS_RECEIVED: number = 2;
+  static readonly LOADING: number = 3;
+  static readonly DONE: number = 4;
+  
   public readonly UNSENT: number = 0;
   public readonly OPENED: number = 1;
   public readonly HEADERS_RECEIVED: number = 2;
@@ -120,6 +126,10 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     }
     
     const listeners = this._listeners[event.type];
+    if(!listeners){
+      return true;
+    }
+    
     for(let i=0;i<listeners.length;i++){
       const l = listeners[i];
       l.call(this, event);
@@ -216,6 +226,8 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     this._xhr.timeout = this.timeout;
     this._xhr.withCredentials = this.withCredentials;
   
+    this.dispatchEvent(makeProgressEvent("loadstart", 0));
+    
     const headerMap = this._request.headers;
     for(const headerName in headerMap){
       if(!Object.prototype.hasOwnProperty.call(headerMap, headerName)){
@@ -417,7 +429,6 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     
     if(this._readyState === this.OPENED){
       this.dispatchEvent(readyStateChangeEvent);
-      this.dispatchEvent(makeProgressEvent("loadstart", 0));
     }
     else if(this._readyState === this.HEADERS_RECEIVED){
       this._syncResponseHeader();

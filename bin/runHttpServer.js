@@ -6,10 +6,16 @@ const app = express();
 
 app.use("/node_modules", express.static(path.join(__dirname, "../node_modules")));
 app.use("/dist", express.static(path.join(__dirname, "../dist")));
+app.use("/test.config.js", express.static(path.join(__dirname, "../test.config.js")));
 app.use(config.path.test, express.static(path.join(__dirname, "../test")));
-app.get(config.path.api, function (req, res) {
-  res.send("test");
-})
+app.get(config.path.api.normal, function (req, res) {
+  res.send("normal");
+});
+app.get(config.path.api.timeout, function (req, res) {
+  setTimeout(() => {
+    res.send("timeout");
+  }, 99999999);
+});
 
 app.listen(config.port);
 
