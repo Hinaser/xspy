@@ -7,6 +7,7 @@ const config = {
     api: {
       normal: "/api/normal",
       timeout: "/api/timeout",
+      invalidXml: "/api/invalid-xml",
     },
   },
 };

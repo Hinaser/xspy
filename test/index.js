@@ -4,18 +4,21 @@ const path = require("path");
 const config = require("../test.config");
 
 const url = `${config.protocol}://${config.host}:${config.port}${config.path.test}`;
-const nightmare = Nightmare({show: true});
-
-function exit(err){
-  console.error(err);
-  process.exit(1);
-}
+const nightmare = Nightmare({
+  show: false,
+});
 
 // Start web server
 const server = require("../bin/runHttpServer");
 
+function exit(){
+  server.close();
+  process.exit(0);
+}
+
 nightmare
   .goto(url)
+  .wait(() => window.__mochaFinished__)
   .evaluate(() => window.__coverage__)
   .end()
   .then(coverage => {
@@ -28,15 +31,16 @@ nightmare
      */
     data = data.replace(/webpack:\/\/\/.\/src\//g, "../src/");
     
-    const errorHandler = (err) => {
-      if(err){
-        exit(err);
-      }
-    };
-    fs.writeFile(pathToCoverage, data, errorHandler);
+    return new Promise((resolve, reject) => {
+      const callback = (err) => {
+        if(err){
+          return reject(err);
+        }
+        return resolve();
+      };
+      fs.writeFile(pathToCoverage, data, callback);
+    });
   })
-  .catch(exit)
-  .finally(() => {
-    server.close();
-  })
+  .catch(console.error)
+  .finally(exit)
 ;

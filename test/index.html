@@ -20,7 +20,9 @@
 <script src="/test.config.js"></script>
 <script src="/test/specs/xhr.test.js"></script>
 <script class="mocha-exec">
-  mocha.run();
+  mocha.run(function(failures){
+    window.__mochaFinished__ = true;
+  });
 </script>
 </body>
 </html>

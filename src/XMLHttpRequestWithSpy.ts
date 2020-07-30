@@ -51,16 +51,27 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
   }
   
   private _init(){
-    const addEventListener = (name: "error"|"timeout"|"abort"|"progress") => {
+    this._onError = this._onError.bind(this);
+  
+    const addEventListener = <K extends keyof XMLHttpRequestEventMap>(type: K) => {
       this.addEventListener(name, this._onError);
     }
     addEventListener("error");
     addEventListener("timeout");
     addEventListener("abort");
-    addEventListener("progress");
     
     this._xhr.onreadystatechange = () => {
+      // According to https://xhr.spec.whatwg.org/#the-abort()-method
+      // onreadystatechange should not be called,
+      // but some major browsers seems actually calls it.
+      /*
+      if(this._isAborted){
+        return;
+      }
+      */
+  
       const realReadyState = this._xhr.readyState;
+      
       if(realReadyState === this.HEADERS_RECEIVED){
         this._loadHeadersToResponse();
       }
@@ -207,10 +218,26 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
       return;
     }
   
-    this._xhr.onabort = this.onabort;
-    this._xhr.onerror = this.onerror;
-    this._xhr.ontimeout = this.ontimeout;
-    this._xhr.onprogress = this.onprogress;
+    this._xhr.onabort = typeof(this.onabort) === "function" ? this.onabort.bind(this) : null;
+    this._xhr.onerror = typeof(this.onerror) === "function" ? this.onerror.bind(this) : null;
+    this._xhr.ontimeout = typeof(this.ontimeout) === "function" ? this.ontimeout.bind(this) : null;
+    this._xhr.onprogress = typeof(this.onprogress) === "function" ? this.onprogress.bind(this) : null;
+    
+    const addEventListeners = <K extends keyof XMLHttpRequestEventMap>(type: K) => {
+      const localListeners = this._listeners[type];
+      if(!localListeners || localListeners.length < 1){
+        return;
+      }
+      
+      for(let i=0;i<localListeners.length;i++){
+        this._xhr.addEventListener(type, localListeners[i].bind(this));
+      }
+    };
+    
+    addEventListeners("abort");
+    addEventListeners("error");
+    addEventListeners("timeout");
+    addEventListeners("progress");
   
     this._transitioning = true;
   
@@ -277,6 +304,10 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
   
   public abort() {
     this._isAborted = true;
+    this.status = 0;
+    this.readyState = this.UNSENT;
+    this._readyState = this.UNSENT;
+    
     if(this._transitioning){
       this._xhr.abort();
     }
@@ -284,7 +315,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
       this.dispatchEvent(makeProgressEvent("abort", 0));
     }
     
-    this.status = 0;
+    this._transitioning = false;
   }
   
   private static _createRequest(xhr: XMLHttpRequest){
@@ -423,15 +454,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     this._hasError = true;
     this._readyState = this.UNSENT;
     this.readyState = this.UNSENT;
-  }
-  
-  private _onProgress(){
-    if(this._readyState < this.LOADING){
-      this._runUntil(this.LOADING);
-    }
-    else{
-      this.dispatchEvent(new Event("readystatechange"));
-    }
+    this.status = 0;
   }
   
   private _triggerStateAction(){
