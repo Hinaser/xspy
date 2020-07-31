@@ -63,7 +63,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     this._xhr.onreadystatechange = () => {
       // According to https://xhr.spec.whatwg.org/#the-abort()-method
       // onreadystatechange should not be called,
-      // but some major browsers seems actually calls it.
+      // but some major browsers seems to call it actually.
       /*
       if(this._isAborted){
         return;

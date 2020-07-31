@@ -5,7 +5,7 @@ const config = require("../test.config");
 
 const url = `${config.protocol}://${config.host}:${config.port}${config.path.test}`;
 const nightmare = Nightmare({
-  show: false,
+  show: true,
 });
 
 // Start web server
