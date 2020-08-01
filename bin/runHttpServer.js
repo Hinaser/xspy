@@ -8,7 +8,8 @@ app.use("/node_modules", express.static(path.join(__dirname, "../node_modules"))
 app.use("/test.config.js", express.static(path.join(__dirname, "../test.config.js")));
 app.use(config.path.test, express.static(path.join(__dirname, "../test")));
 app.get(config.path.api.normal, function (req, res) {
-  res.send("normal");
+  res.contentType("application/json");
+  res.send({result: "normal"});
 });
 app.get(config.path.api.timeout, function (req, res) {
   setTimeout(() => {
@@ -18,6 +19,15 @@ app.get(config.path.api.timeout, function (req, res) {
 app.get(config.path.api.invalidXml, function (req, res) {
   res.contentType("text/xml");
   res.send("not-valid-xml");
+});
+app.get(config.path.api.auth, function (req, res) {
+  const authorization = req.get("Authorization");
+  if(authorization === "test-authorization"){
+    res.send("ok");
+    return;
+  }
+  
+  res.status(401).end();
 });
 
 const server = app.listen(config.port);

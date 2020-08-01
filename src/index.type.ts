@@ -30,9 +30,10 @@ export type TResponse = {
   statusText: string;
   finalUrl: string;
   headers: { [name: string]: string };
-  text?: string;
-  data?: Document|string|null;
-  xml?: Document|null;
+  responseType: XMLHttpRequestResponseType;
+  responseText?: string;
+  response?: Document|string|null;
+  responseXML?: Document|null;
 };
 
 export interface WindowEx extends Window {

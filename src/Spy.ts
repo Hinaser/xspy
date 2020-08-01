@@ -64,6 +64,11 @@ export class Spy {
     this._removeEventListener("response", listener);
   }
   
+  public static clearAll() {
+    Spy.clearRequestHandler();
+    Spy.clearResponseHandler();
+  }
+  
   public static clearRequestHandler() {
     this._reqListeners = [];
   }

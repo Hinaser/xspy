@@ -52,9 +52,10 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
   
   private _init(){
     this._onError = this._onError.bind(this);
+    this._createRequestCallback = this._createRequestCallback.bind(this);
   
     const addEventListener = <K extends keyof XMLHttpRequestEventMap>(type: K) => {
-      this.addEventListener(name, this._onError);
+      this.addEventListener(type, this._onError);
     }
     addEventListener("error");
     addEventListener("timeout");
@@ -73,12 +74,15 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
       const realReadyState = this._xhr.readyState;
       
       if(realReadyState === this.HEADERS_RECEIVED){
-        this._loadHeadersToResponse();
+        this._loadHeaderFromXHRToVirtualResponse();
+      }
+      else if(realReadyState === this.LOADING){
+        this._loadHeaderFromXHRToVirtualResponse();
       }
       else if(realReadyState === this.DONE){
         this._transitioning = false;
-        this._loadHeadersToResponse();
-        this._loadBodyToResponse();
+        this._loadHeaderFromXHRToVirtualResponse();
+        this._loadBodyFromXHRToVirtualResponse();
       }
       
       this._runUntil(realReadyState);
@@ -185,89 +189,85 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     if(this._readyState !== this.OPENED){
       throw new DOMException("XMLHttpRequest state must be OPENED");
     }
-    
-    this._request.responseType = this.responseType;
-    this._request.timeout = this.timeout;
-    this._request.withCredentials = this.withCredentials;
-    this._request.body = body;
-    
+  
+    this._setupVirtualRequestForSending();
+    this._syncEventListenersToXHR();
+  
     const listeners = Spy.getRequestListeners();
+    let listenerPointer = 0;
     
-    const requestCallback: RequestCallback = this._createRequestCallback();
+    const dispatchXHRSend = () => {
+      // Re-sync
+      this._setupVirtualRequestForSending();
     
-    try{
-      for(let i=0;i<listeners.length;i++){
-        const l = listeners[i];
-        // l: (request) => unknown
-        if(l.length < 2){
-          l.call(this, this._request);
+      // When requestCallback is used, readystate is automatically move forward to 'DONE'
+      // and produce dummy response.
+      if(this._readyState === this.DONE){
+        return;
+      }
+    
+      this._transitioning = true;
+    
+      this._xhr.open(
+        this._request.method,
+        this._request.url,
+        this._request.async ?? true,
+        this._request.username,
+        this._request.password
+      );
+    
+      this._xhr.responseType = this.responseType;
+      this._xhr.timeout = this.timeout;
+      this._xhr.withCredentials = this.withCredentials;
+    
+      this.dispatchEvent(makeProgressEvent("loadstart", 0));
+    
+      const headerMap = this._request.headers;
+      for(const headerName in headerMap){
+        if(!Object.prototype.hasOwnProperty.call(headerMap, headerName)){
+          continue;
         }
-        // l: (request, callback) => unknown
-        else{
-          l.call(this, this._request, requestCallback);
+      
+        const headerValue = headerMap[headerName];
+        if(headerValue){
+          this._xhr.setRequestHeader(headerName, headerValue);
         }
       }
+    
+      this._xhr.send(this._request.body);
+    };
+    
+    try{
+      const executeNextListener = (): unknown => {
+        if(listenerPointer >= listeners.length){
+          return dispatchXHRSend();
+        }
+        
+        const l = listeners[listenerPointer];
+  
+        // l: (request, callback) => unknown
+        if(l.length >= 2){
+          const userCallback = this._createRequestCallback(() => {
+            listenerPointer++;
+            executeNextListener();
+          });
+  
+          l.call(this, this._request, userCallback);
+          return;
+        }
+        
+        // l: (request) => unknown
+        l.call(this, this._request);
+        
+        listenerPointer++;
+        executeNextListener();
+      };
+      
+      executeNextListener();
     }
     catch(e){
       console.warn("XMLHttpRequest: Exception in request handler", e);
     }
-    
-    // When requestCallback is used, readystate is automatically move forward to 'DONE'
-    // and produce dummy response.
-    if(this._readyState === this.DONE){
-      return;
-    }
-  
-    this._xhr.onabort = typeof(this.onabort) === "function" ? this.onabort.bind(this) : null;
-    this._xhr.onerror = typeof(this.onerror) === "function" ? this.onerror.bind(this) : null;
-    this._xhr.ontimeout = typeof(this.ontimeout) === "function" ? this.ontimeout.bind(this) : null;
-    this._xhr.onprogress = typeof(this.onprogress) === "function" ? this.onprogress.bind(this) : null;
-    
-    const addEventListeners = <K extends keyof XMLHttpRequestEventMap>(type: K) => {
-      const localListeners = this._listeners[type];
-      if(!localListeners || localListeners.length < 1){
-        return;
-      }
-      
-      for(let i=0;i<localListeners.length;i++){
-        this._xhr.addEventListener(type, localListeners[i].bind(this));
-      }
-    };
-    
-    addEventListeners("abort");
-    addEventListeners("error");
-    addEventListeners("timeout");
-    addEventListeners("progress");
-  
-    this._transitioning = true;
-  
-    this._xhr.open(
-      this._request.method,
-      this._request.url,
-      this._request.async ?? true,
-      this._request.username,
-      this._request.password
-    );
-  
-    this._xhr.responseType = this.responseType;
-    this._xhr.timeout = this.timeout;
-    this._xhr.withCredentials = this.withCredentials;
-  
-    this.dispatchEvent(makeProgressEvent("loadstart", 0));
-    
-    const headerMap = this._request.headers;
-    for(const headerName in headerMap){
-      if(!Object.prototype.hasOwnProperty.call(headerMap, headerName)){
-        continue;
-      }
-      
-      const headerValue = headerMap[headerName];
-      if(headerValue){
-        this._xhr.setRequestHeader(headerName, headerValue);
-      }
-    }
-  
-    this._xhr.send(this._request.body);
   }
   
   public setRequestHeader(name: string, value: string) {
@@ -336,11 +336,41 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
       status: 0,
       statusText: "",
       finalUrl: "",
+      responseType: "" as const,
       headers: {},
     };
   }
   
-  private _createRequestCallback(): RequestCallback {
+  private _setupVirtualRequestForSending(body?: Document | BodyInit | null){
+    this._request.responseType = this.responseType;
+    this._request.timeout = this.timeout;
+    this._request.withCredentials = this.withCredentials;
+    this._request.body = body;
+    this._xhr.onabort = typeof(this.onabort) === "function" ? this.onabort.bind(this) : null;
+    this._xhr.onerror = typeof(this.onerror) === "function" ? this.onerror.bind(this) : null;
+    this._xhr.ontimeout = typeof(this.ontimeout) === "function" ? this.ontimeout.bind(this) : null;
+    this._xhr.onprogress = typeof(this.onprogress) === "function" ? this.onprogress.bind(this) : null;
+  }
+  
+  private _syncEventListenersToXHR(){
+    const addEventListeners = <K extends keyof XMLHttpRequestEventMap>(type: K) => {
+      const localListeners = this._listeners[type];
+      if(!localListeners || localListeners.length < 1){
+        return;
+      }
+    
+      for(let i=0;i<localListeners.length;i++){
+        this._xhr.addEventListener(type, localListeners[i].bind(this));
+      }
+    };
+  
+    addEventListeners("abort");
+    addEventListeners("error");
+    addEventListeners("timeout");
+    addEventListeners("progress");
+  }
+  
+  private _createRequestCallback(onCalled: () => unknown) : RequestCallback {
     type RequestCallbackOnlyWithDefaultFunc = {
       (dummyResponse: TResponse): unknown;
       moveToHeaderReceived?: (dummyResponse: TResponse) => void;
@@ -349,8 +379,11 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     
     const cb: RequestCallbackOnlyWithDefaultFunc = (response: TResponse) => {
       if(!response || typeof response !== "object"){
+        onCalled();
         return;
       }
+      
+      this.dispatchEvent(makeProgressEvent("loadstart", 0));
   
       this._response = {
         ...this._response,
@@ -358,6 +391,8 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
       };
   
       this._runUntil(this.DONE);
+  
+      onCalled();
     };
     
     const moveToHeaderReceived = (response: TResponse) => {
@@ -388,7 +423,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     return cb as RequestCallback;
   }
   
-  private _loadHeadersToResponse(){
+  private _loadHeaderFromXHRToVirtualResponse(){
     this._response.status = this._xhr.status;
     if(isNaN(IEVersion) || IEVersion >= 10){
       this._response.statusText = this._xhr.statusText;
@@ -411,18 +446,22 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     }
   }
   
-  private _loadBodyToResponse(){
-    if(!this._xhr.responseType || this._xhr.responseType === "text"){
-      this._response.text = this._xhr.responseText;
-      this._response.data = this._xhr.responseText;
-      this._response.xml = this._xhr.responseXML;
+  private _loadBodyFromXHRToVirtualResponse(){
+    if(!this._xhr.responseType){
+      this._response.responseText = this._xhr.responseText;
+      this._response.responseXML = this._xhr.responseXML;
+      this._response.response = this._xhr.responseText;
+    }
+    else if(this._xhr.responseType === "text"){
+      this._response.responseText = this._xhr.responseText;
+      this._response.response = this._xhr.responseText;
     }
     else if(this._xhr.responseType === "document"){
-      this._response.xml = this._xhr.responseXML;
-      this._response.data = this._xhr.responseXML;
+      this._response.responseXML = this._xhr.responseXML;
+      this._response.response = this._xhr.responseXML;
     }
     else{
-      this._response.data = this._xhr.response;
+      this._response.response = this._xhr.response;
     }
     
     if("responseURL" in this._xhr){
@@ -430,20 +469,20 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     }
   }
   
-  private _syncResponseHeader(){
+  private _syncHeaderFromVirtualResponse(){
     this.status = this._response.status;
     this.statusText = this._response.statusText;
   }
   
-  private _syncResponseBody(){
-    if("text" in this._response){
-      this.responseText = this._response.text || "";
+  private _syncBodyFromVirtualResponse(){
+    if("responseText" in this._response){
+      this.responseText = this._response.responseText || "";
     }
-    if("xml" in this._response){
-      this.responseXML = this._response.xml || null;
+    if("responseXML" in this._response){
+      this.responseXML = this._response.responseXML || null;
     }
-    if("data" in this._response){
-      this.response = this._response.data || null;
+    if("response" in this._response){
+      this.response = this._response.response || null;
     }
     if("finalUrl" in this._response){
       this.responseURL = this._response.finalUrl;
@@ -464,22 +503,26 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
       this.dispatchEvent(readyStateChangeEvent);
     }
     else if(this._readyState === this.HEADERS_RECEIVED){
-      this._syncResponseHeader();
+      this._syncHeaderFromVirtualResponse();
       this.dispatchEvent(readyStateChangeEvent);
     }
     else if(this._readyState === this.LOADING){
-      this._syncResponseHeader();
+      this._syncHeaderFromVirtualResponse();
       this.dispatchEvent(readyStateChangeEvent);
     }
     else if(this._readyState === this.DONE){
-      this._syncResponseHeader();
-      this._syncResponseBody();
+      this._syncHeaderFromVirtualResponse();
+      this._syncBodyFromVirtualResponse();
       
       const listeners = Spy.getResponseListeners();
       for(let i=0;i<listeners.length;i++){
         const l = listeners[i];
         l.call(this._xhr, this._request, this._response);
       }
+  
+      // Re-sync for a case that this._request/this._response is modified in callback
+      this._syncHeaderFromVirtualResponse();
+      this._syncBodyFromVirtualResponse();
   
       this.dispatchEvent(readyStateChangeEvent);
       
