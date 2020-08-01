@@ -3,7 +3,7 @@ var normalApiResponseUrl = baseApiUrl + testConfig.path.api.normal;
 var timeoutApiResponseUrl = baseApiUrl + testConfig.path.api.timeout;
 var invalidXMLApiResponseUrl = baseApiUrl + testConfig.path.api.invalidXml;
 var authRequiredResponseUrl = baseApiUrl + testConfig.path.api.auth;
-var htmlUrl = testConfig.protocol + "://" + testConfig.host + ":" + testConfig.port + "/test/index.html";
+var validXMLUrl = baseApiUrl + testConfig.path.api.validXml;
 
 describe("fetch-xhr-hook", function(){
   describe("fetchXhrHook", function(){
@@ -218,6 +218,19 @@ describe("fetch-xhr-hook", function(){
                 xhr.onreadystatechange = function(){
                   if(this.readyState === XMLHttpRequest.DONE){
                     expect(this.response).to.be("{\"result\":\"normal\"}");
+                    done();
+                  }
+                };
+                xhr.send();
+              });
+              it("returns document response when responseType is set to 'document'", function(done){
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", validXMLUrl);
+                xhr.responseType = "document";
+                xhr.onreadystatechange = function(){
+                  if(this.readyState === XMLHttpRequest.DONE){
+                    expect(this.response instanceof XMLDocument).to.be(true);
+                    expect(this.responseXML instanceof XMLDocument).to.be(true);
                     done();
                   }
                 };

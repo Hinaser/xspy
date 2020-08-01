@@ -16,6 +16,10 @@ app.get(config.path.api.timeout, function (req, res) {
     res.send("timeout");
   }, 99999999);
 });
+app.get(config.path.api.validXml, function (req, res) {
+  res.contentType("text/xml");
+  res.send("<root><title>test</title></root>");
+});
 app.get(config.path.api.invalidXml, function (req, res) {
   res.contentType("text/xml");
   res.send("not-valid-xml");
