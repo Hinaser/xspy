@@ -1,42 +1,72 @@
-import {Spy} from "./Spy";
+import {Proxy} from "./Proxy";
+
+export interface WindowEx extends Window {
+  XMLHttpRequest: new() => XMLHttpRequest;
+  fetchXhrHook: typeof Proxy;
+}
 
 export type EventType = "request" | "response";
-export type RequestCallback = {
-  (dummyResponse: TResponse): unknown;
-  moveToHeaderReceived: (dummyResponse: TResponse) => void;
-  moveToLoading: (dummyResponse: TResponse) => void;
+export type RequestCallback<T extends "xhr"|"fetch"> = {
+  (dummyResponse: TResponse<T>): unknown;
+  moveToHeaderReceived: (dummyResponse: TResponse<T>) => void;
+  moveToLoading: (dummyResponse: TResponse<T>) => void;
 };
-export type RequestHandler = (this: XMLHttpRequest, request: TRequest, callback?: RequestCallback) => unknown;
-export type ResponseHandler = (this: XMLHttpRequest, request: TRequest, response: TResponse) => unknown;
+export type RequestHandler<T extends "xhr"|"fetch"> = (
+  this: T extends "xhr" ? XMLHttpRequest : unknown,
+  request: T extends "xhr" ? XhrRequest : FetchRequest,
+  callback?: RequestCallback<T>
+) => unknown;
+export type ResponseHandler<T extends "xhr"|"fetch"> = (
+  this: T extends "xhr" ? XMLHttpRequest : unknown,
+  request: T extends "xhr" ? XhrRequest : FetchRequest,
+  response: T extends "xhr" ? XhrResponse : FetchResponse,
+  callback?: ResponseCallback<T>
+) => unknown;
 
-export type TRequest = {
-  xhr: XMLHttpRequest;
-  status: number;
+export type ResponseCallback<T extends "xhr"|"fetch">
+  = (dummyResponse: T extends "xhr" ? XhrResponse : FetchResponse) => unknown;
+
+export interface TRequest<T extends "xhr"|"fetch"> {
+  ajaxType: T;
   method: string;
   url: string;
-  headers: { [name: string]: string };
+  headers: T extends "xhr" ? Record<string, string> : Headers;
+  timeout: number;
+  body?: T extends "xhr" ? BodyInit | null | Document : ReadableStream<Uint8Array> | null;
+}
+
+export interface XhrRequest extends TRequest<"xhr"> {
   async?: boolean;
   username?: string|null;
   password?: string|null;
   responseType?: XMLHttpRequestResponseType;
-  timeout: number;
   withCredentials?: boolean;
-  body?: Document | BodyInit | null;
   upload?: XMLHttpRequestUpload;
-};
+}
 
-export type TResponse = {
+export interface FetchRequest extends TRequest<"fetch">, Request {
+  body: ReadableStream<Uint8Array> | null;
+  headers: Headers;
+  method: string;
+  url: string;
+}
+
+export interface TResponse<T extends "xhr"|"fetch"> {
+  ajaxType: T;
   status: number;
   statusText: string;
-  finalUrl: string;
-  headers: { [name: string]: string };
-  responseType: XMLHttpRequestResponseType;
-  responseText?: string;
-  response?: Document|string|null;
-  responseXML?: Document|null;
-};
+}
 
-export interface WindowEx extends Window {
-  XMLHttpRequest: new() => XMLHttpRequest;
-  fetchXhrHook: typeof Spy;
+export interface XhrResponse extends TResponse<"xhr"> {
+  headers: Record<string, string>;
+  responseType: XMLHttpRequestResponseType;
+  response?: Document|string|null;
+  responseText?: string;
+  responseXML?: Document|null;
+  responseURL?: string;
+}
+
+export interface FetchResponse extends TResponse<"fetch">, Response {
+  status: number;
+  statusText: string;
 }

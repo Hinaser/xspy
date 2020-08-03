@@ -1,10 +1,12 @@
-import {Spy} from "./Spy";
-import {XMLHttpRequestWithSpy} from "./XMLHttpRequestWithSpy";
+import {Proxy} from "./Proxy";
 import {WindowEx} from "./index.type";
+import {XHRProxy} from "./XMLHttpRequest";
+import {fetchProxy} from "./fetch";
 
 declare let window: WindowEx;
 
-Spy.setXMLHttpRequestWithSpy(XMLHttpRequestWithSpy);
-Spy.enable();
+Proxy.setXMLHttpRequest(XHRProxy);
+Proxy.setFetch(fetchProxy);
+Proxy.enable();
 
-window.fetchXhrHook = Spy;
+window.fetchXhrHook = Proxy;

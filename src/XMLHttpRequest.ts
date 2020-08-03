@@ -1,8 +1,8 @@
-import {RequestCallback, TRequest, TResponse} from "./index.type";
-import {IEVersion, makeProgressEvent, toHeaderMap, toHeaderString} from "./XMLHttpRequestWithSpy.lib";
-import {Spy} from "./Spy";
+import {RequestCallback, ResponseCallback, XhrRequest, XhrResponse} from "./index.type";
+import {createEvent, makeProgressEvent, toHeaderMap, toHeaderString} from "./index.lib";
+import {Proxy} from "./Proxy";
 
-export class XMLHttpRequestWithSpy implements XMLHttpRequest {
+export class XHRProxy implements XMLHttpRequest {
   static readonly UNSENT: number = 0;
   static readonly OPENED: number = 1;
   static readonly HEADERS_RECEIVED: number = 2;
@@ -15,14 +15,14 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
   public readonly LOADING: number = 3;
   public readonly DONE: number = 4;
   
-  private _xhr = new Spy.OriginalXHR();
+  private _xhr = new Proxy.OriginalXHR();
   private _listeners: {[type: string]: Array<(this: XMLHttpRequest, ev: Event|ProgressEvent<XMLHttpRequestEventTarget>) => unknown>} = {};
   private _readyState: number = 0;
   private _isAborted: boolean = false;
   private _hasError: boolean|null = null;
   private _transitioning: boolean|null = null;
-  private _request: TRequest = XMLHttpRequestWithSpy._createRequest(this._xhr);
-  private _response: TResponse = XMLHttpRequestWithSpy._createResponse();
+  private _request: XhrRequest = XHRProxy._createRequest(this._xhr);
+  private _response: XhrResponse = XHRProxy._createResponse();
   
   public readyState = 0;
   public status = 0;
@@ -167,9 +167,8 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     this._transitioning = false;
     
     this._request = {
-      ...XMLHttpRequestWithSpy._createRequest(this._xhr),
+      ...XHRProxy._createRequest(this._xhr),
       headers: {},
-      status: 0,
       method,
       url,
       async: async !== false,
@@ -178,7 +177,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     };
     
     this._response = {
-      ...XMLHttpRequestWithSpy._createResponse(),
+      ...XHRProxy._createResponse(),
       headers: {},
     };
     
@@ -192,11 +191,12 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
   
     this._setupVirtualRequestForSending();
     this._syncEventListenersToXHR();
-  
-    const listeners = Spy.getRequestListeners();
-    let listenerPointer = 0;
     
+    let isDispatchXHRSendCalled = false;
+  
     const dispatchXHRSend = () => {
+      isDispatchXHRSendCalled = true;
+      
       // Re-sync
       this._setupVirtualRequestForSending();
     
@@ -207,17 +207,21 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
       }
     
       this._transitioning = true;
+      
+      const async = this._request.async !== false;
     
       this._xhr.open(
         this._request.method,
         this._request.url,
-        this._request.async ?? true,
+        async,
         this._request.username,
         this._request.password
       );
     
-      this._xhr.responseType = this.responseType;
-      this._xhr.timeout = this.timeout;
+      if(async){
+        this._xhr.responseType = this.responseType;
+        this._xhr.timeout = this.timeout;
+      }
       this._xhr.withCredentials = this.withCredentials;
     
       this.dispatchEvent(makeProgressEvent("loadstart", 0));
@@ -236,38 +240,46 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     
       this._xhr.send(this._request.body);
     };
-    
-    try{
-      const executeNextListener = (): unknown => {
+  
+    const listeners = Proxy.getRequestListeners();
+    let listenerPointer = 0;
+  
+    const executeNextListener = (): unknown => {
+      try{
         if(listenerPointer >= listeners.length){
           return dispatchXHRSend();
         }
-        
+      
         const l = listeners[listenerPointer];
-  
+      
         // l: (request, callback) => unknown
         if(l.length >= 2){
           const userCallback = this._createRequestCallback(() => {
             listenerPointer++;
             executeNextListener();
           });
-  
-          l.call(this, this._request, userCallback);
+        
+          l.call(this, this._request, userCallback as RequestCallback<"xhr"|"fetch">);
           return;
         }
-        
+      
         // l: (request) => unknown
         l.call(this, this._request);
-        
+      
         listenerPointer++;
         executeNextListener();
-      };
+      }
+      catch(e){
+        console.warn("XMLHttpRequest: Exception in request handler", e);
       
-      executeNextListener();
-    }
-    catch(e){
-      console.warn("XMLHttpRequest: Exception in request handler", e);
-    }
+        if(!isDispatchXHRSendCalled){
+          listenerPointer++;
+          executeNextListener();
+        }
+      }
+    };
+  
+    executeNextListener();
   }
   
   public setRequestHeader(name: string, value: string) {
@@ -303,6 +315,15 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
   }
   
   public abort() {
+    // According to https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Synchronous_and_Asynchronous_Requests#Synchronous_request ,
+    // it should throw an Error on abort() called when using synchronous request.
+    // However, it actually does not in some major browser.
+    /*
+    if(this._request.async === false){
+      throw new Error("Invalid access error");
+    }
+   */
+    
     this._isAborted = true;
     this.status = 0;
     this.readyState = this.UNSENT;
@@ -318,11 +339,10 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     this._transitioning = false;
   }
   
-  private static _createRequest(xhr: XMLHttpRequest){
+  private static _createRequest(xhr: XMLHttpRequest): XhrRequest {
     return {
-      xhr,
+      ajaxType: "xhr" as const,
       headers: {},
-      status: 0,
       method: "GET",
       url: "",
       async: true,
@@ -333,6 +353,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
   
   private static _createResponse(){
     return {
+      ajaxType: "xhr" as const,
       status: 0,
       statusText: "",
       finalUrl: "",
@@ -370,14 +391,14 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     addEventListeners("progress");
   }
   
-  private _createRequestCallback(onCalled: () => unknown) : RequestCallback {
+  private _createRequestCallback(onCalled: () => unknown) : RequestCallback<"xhr"> {
     type RequestCallbackOnlyWithDefaultFunc = {
-      (dummyResponse: TResponse): unknown;
-      moveToHeaderReceived?: (dummyResponse: TResponse) => void;
-      moveToLoading?: (dummyResponse: TResponse) => void;
+      (dummyResponse: XhrResponse): unknown;
+      moveToHeaderReceived?: (dummyResponse: XhrResponse) => void;
+      moveToLoading?: (dummyResponse: XhrResponse) => void;
     };
     
-    const cb: RequestCallbackOnlyWithDefaultFunc = (response: TResponse) => {
+    const cb: RequestCallbackOnlyWithDefaultFunc = (response: XhrResponse) => {
       if(!response || typeof response !== "object"){
         onCalled();
         return;
@@ -395,7 +416,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
       onCalled();
     };
     
-    const moveToHeaderReceived = (response: TResponse) => {
+    const moveToHeaderReceived = (response: XhrResponse) => {
       if(this.readyState >= this.HEADERS_RECEIVED){
         return;
       }
@@ -406,7 +427,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
       this._runUntil(this.HEADERS_RECEIVED);
     };
     
-    const moveToLoading = (response: TResponse) => {
+    const moveToLoading = (response: XhrResponse) => {
       if(this.readyState >= this.LOADING){
         return;
       }
@@ -420,16 +441,31 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     cb.moveToHeaderReceived = moveToHeaderReceived;
     cb.moveToLoading = moveToLoading;
     
-    return cb as RequestCallback;
+    return cb as RequestCallback<"xhr">;
+  }
+  
+  private _createResponseCallback(onCalled: () => unknown) : ResponseCallback<"xhr"> {
+    return (response: XhrResponse) => {
+      if(!response || typeof response !== "object"){
+        onCalled();
+        return;
+      }
+      
+      this._response = {
+        ...this._response,
+        ...response,
+      };
+      
+      onCalled();
+    };
   }
   
   private _loadHeaderFromXHRToVirtualResponse(){
     this._response.status = this._xhr.status;
-    if(isNaN(IEVersion) || IEVersion >= 10){
+    if(!this._isAborted){
       this._response.statusText = this._xhr.statusText;
     }
-  
-    if(this._isAborted){
+    else{
       return;
     }
     
@@ -465,7 +501,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     }
     
     if("responseURL" in this._xhr){
-      this._response.finalUrl = this._xhr.responseURL;
+      this._response.responseURL = this._xhr.responseURL;
     }
   }
   
@@ -484,8 +520,8 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
     if("response" in this._response){
       this.response = this._response.response || null;
     }
-    if("finalUrl" in this._response){
-      this.responseURL = this._response.finalUrl;
+    if("responseURL" in this._response){
+      this.responseURL = this._response.responseURL || "";
     }
   }
   
@@ -497,7 +533,7 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
   }
   
   private _triggerStateAction(){
-    const readyStateChangeEvent = new Event("readystatechange")
+    const readyStateChangeEvent = createEvent("readystatechange");
     
     if(this._readyState === this.OPENED){
       this.dispatchEvent(readyStateChangeEvent);
@@ -514,31 +550,71 @@ export class XMLHttpRequestWithSpy implements XMLHttpRequest {
       this._syncHeaderFromVirtualResponse();
       this._syncBodyFromVirtualResponse();
       
-      const listeners = Spy.getResponseListeners();
-      for(let i=0;i<listeners.length;i++){
-        const l = listeners[i];
-        l.call(this._xhr, this._request, this._response);
-      }
-  
-      // Re-sync for a case that this._request/this._response is modified in callback
-      this._syncHeaderFromVirtualResponse();
-      this._syncBodyFromVirtualResponse();
-  
-      this.dispatchEvent(readyStateChangeEvent);
+      let isReturnResponseCalled = false;
       
-      const emitLoadEvent = () => {
-        if(!this._hasError){
-          this.dispatchEvent(makeProgressEvent("load", 0));
+      const returnResponse = () => {
+        isReturnResponseCalled = true;
+        
+        // Re-sync for a case that this._request/this._response is modified in callback
+        this._syncHeaderFromVirtualResponse();
+        this._syncBodyFromVirtualResponse();
+  
+        this.dispatchEvent(readyStateChangeEvent);
+  
+        const emitLoadEvent = () => {
+          if(!this._hasError){
+            this.dispatchEvent(makeProgressEvent("load", 0));
+          }
+          this.dispatchEvent(makeProgressEvent("loadend", 0));
+        };
+  
+        if(this._request.async === false){
+          emitLoadEvent();
         }
-        this.dispatchEvent(makeProgressEvent("loadend", 0));
+        else{
+          window.setTimeout(emitLoadEvent, 0);
+        }
       };
+  
+      const listeners = Proxy.getResponseListeners();
+      let listenerPointer = 0;
+  
+      const executeNextListener = (): unknown => {
+        try{
+          if(listenerPointer >= listeners.length){
+            return returnResponse();
+          }
       
-      if(this._request.async === false){
-        emitLoadEvent();
-      }
-      else{
-        window.setTimeout(emitLoadEvent, 0);
-      }
+          const l = listeners[listenerPointer];
+      
+          // l: (request, response, callback) => unknown
+          if(l.length >= 3){
+            const userCallback = this._createResponseCallback(() => {
+              listenerPointer++;
+              executeNextListener();
+            });
+        
+            l.call(this, this._request, this._response, userCallback);
+            return;
+          }
+      
+          // l: (request, response) => unknown
+          l.call(this, this._request, this._response);
+      
+          listenerPointer++;
+          executeNextListener();
+        }
+        catch(e){
+          console.warn("XMLHttpRequest: Exception in response handler", e);
+      
+          if(!isReturnResponseCalled){
+            listenerPointer++;
+            executeNextListener();
+          }
+        }
+      };
+  
+      executeNextListener();
     }
   }
   

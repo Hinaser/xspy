@@ -3,12 +3,38 @@ const userAgent = typeof navigator !== "undefined" && navigator.userAgent ? navi
 // If browser is not IE, IEVersion will be NaN
 export const IEVersion = (() => {
   const version = parseInt((/msie (\d+)/.exec(userAgent.toLowerCase()) || [])[1], 10);
+  
+  /* istanbul ignore else */
   if (isNaN(version)) {
     return parseInt((/trident\/.*; rv:(\d+)/.exec(userAgent.toLowerCase()) || [])[1], 10);
   }
   
+  /* istanbul ignore next */
   return version;
 })();
+
+export const createEvent = (type: string): Event => {
+  try{
+    /* istanbul ignore else */
+    if(isNaN(IEVersion) && typeof Event !== "undefined"){
+      return new Event(type);
+    }
+    
+    // When browser is IE, new Event will fail.
+    /* istanbul ignore next */
+    const ev = window.document.createEvent("Event");
+    /* istanbul ignore next */
+    ev.initEvent(type);
+    /* istanbul ignore next */
+    return ev;
+  }
+  catch(e){
+    /* istanbul ignore next */
+    return {
+      type,
+    } as Event;
+  }
+};
 
 export const toHeaderMap = (responseHeaders: string) => {
   const headers = responseHeaders.trim().split(/[\r\n]+/)
@@ -44,7 +70,7 @@ export const toHeaderString = (headerMap: {[name: string]: string}) => {
 
 export const makeProgressEvent = (type: string, loaded: number, lengthComputable: boolean = false, total: number = 0) => {
   const ev: ProgressEvent<XMLHttpRequestEventTarget> = {
-    ...new Event(type),
+    ...createEvent(type),
     type,
     target: null,
     loaded,

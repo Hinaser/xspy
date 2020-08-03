@@ -2,35 +2,43 @@ import {EventType, RequestHandler, ResponseHandler, WindowEx} from "./index.type
 
 declare let window: WindowEx;
 
-export class Spy {
-  private static _reqListeners: RequestHandler[] = [];
-  private static _resListeners: ResponseHandler[] = [];
-  private static _agent = window.XMLHttpRequest;
+export class Proxy {
+  private static _reqListeners: Array<RequestHandler<"xhr"|"fetch">> = [];
+  private static _resListeners: Array<ResponseHandler<"xhr"|"fetch">> = [];
+  private static _customXHR = window.XMLHttpRequest;
+  private static _customFetch = window.fetch;
   public static readonly OriginalXHR = window.XMLHttpRequest;
+  public static readonly OriginalFetch = window.fetch;
   
   public static enable() {
-    window.XMLHttpRequest = Spy._agent;
+    window.XMLHttpRequest = Proxy._customXHR;
+    window.fetch = Proxy._customFetch;
   }
   
   public static disable() {
-    window.XMLHttpRequest = Spy.OriginalXHR;
+    window.XMLHttpRequest = Proxy.OriginalXHR;
+    window.fetch = Proxy.OriginalFetch;
   }
   
-  public static setXMLHttpRequestWithSpy(m: typeof window["XMLHttpRequest"]){
-    Spy._agent = m;
+  public static setXMLHttpRequest(m: typeof window["XMLHttpRequest"]){
+    Proxy._customXHR = m;
+  }
+  
+  public static setFetch(m: typeof window["fetch"]){
+    Proxy._customFetch = m;
   }
   
   public static getRequestListeners() {
-    const listeners = Spy._reqListeners;
+    const listeners = Proxy._reqListeners;
     return listeners.slice();
   }
   
   public static getResponseListeners() {
-    const listeners = Spy._resListeners;
+    const listeners = Proxy._resListeners;
     return listeners.slice();
   }
   
-  public static onRequest(listener: RequestHandler, n?: number) {
+  public static onRequest(listener: RequestHandler<"xhr"|"fetch">, n?: number) {
     const listeners = this._reqListeners;
     if (listeners.indexOf(listener) > -1) {
       return;
@@ -43,11 +51,11 @@ export class Spy {
     }
   }
   
-  public static offRequest(listener: RequestHandler) {
+  public static offRequest(listener: RequestHandler<"xhr"|"fetch">) {
     this._removeEventListener("request", listener);
   }
   
-  public static onResponse(listener: ResponseHandler, n?: number) {
+  public static onResponse(listener: ResponseHandler<"xhr"|"fetch">, n?: number) {
     const listeners = this._resListeners;
     if (listeners.indexOf(listener) > -1) {
       return;
@@ -60,13 +68,13 @@ export class Spy {
     }
   }
   
-  public static offResponse(listener: ResponseHandler) {
+  public static offResponse(listener: ResponseHandler<"xhr"|"fetch">) {
     this._removeEventListener("response", listener);
   }
   
   public static clearAll() {
-    Spy.clearRequestHandler();
-    Spy.clearResponseHandler();
+    Proxy.clearRequestHandler();
+    Proxy.clearResponseHandler();
   }
   
   public static clearRequestHandler() {
@@ -77,7 +85,7 @@ export class Spy {
     this._resListeners = [];
   }
   
-  private static _removeEventListener(type: EventType, listener: RequestHandler | ResponseHandler) {
+  private static _removeEventListener(type: EventType, listener: RequestHandler<"xhr"|"fetch"> | ResponseHandler<"xhr"|"fetch">) {
     const listeners = type === "request" ? this._reqListeners : this._resListeners;
     
     for (let i = 0; i < listeners.length; i++) {

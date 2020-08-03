@@ -198,6 +198,12 @@ describe("fetch-xhr-hook", function(){
               };
               xhr.send();
             });
+            it("synchronously gets response when async option is set to false", function(){
+              var xhr = new XMLHttpRequest();
+              xhr.open("GET", normalApiResponseUrl, false);
+              xhr.send();
+              expect(xhr.status).to.be(200);
+            });
             describe("responseType", function(){
               it("returns json response when responseType is set to 'json'", function(done){
                 var xhr = new XMLHttpRequest();
@@ -304,7 +310,7 @@ describe("fetch-xhr-hook", function(){
               it("should fire multiple onloadend event listener", function(done){
                 var xhr = new XMLHttpRequest();
                 xhr.open("GET", normalApiResponseUrl);
-                let counter = 0;
+                var counter = 0;
                 xhr.addEventListener("loadend", function(){
                   counter++;
                   if(counter > 1){
@@ -690,6 +696,28 @@ describe("fetch-xhr-hook", function(){
             }
             xhr.send();
           });
+          it("ignores Exception in request callback in proxy", function(done){
+            fetchXhrHook.onRequest(function(req, cb){
+              throw new Error("error");
+            });
+  
+            fetchXhrHook.onRequest(function(req, cb){
+              cb({
+                status: 200,
+                statusText: "OK",
+              });
+            });
+  
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", authRequiredResponseUrl);
+            xhr.onreadystatechange = function(){
+              if(this.readyState === xhr.DONE){
+                expect(this.status).to.be(200);
+                done();
+              }
+            }
+            xhr.send();
+          });
         });
         describe("hook response", function(){
           it("replace failed 401 response to 200 response", function(done){
@@ -705,10 +733,77 @@ describe("fetch-xhr-hook", function(){
             xhr.onreadystatechange = function(){
               if(this.readyState === xhr.DONE){
                 expect(this.status).to.be(200);
-                expect(this.response).to.be("it's dummy but it's OK");
                 done();
               }
             };
+            xhr.send();
+          });
+        });
+        describe("hook response with response callback", function(){
+          it("replace failed 401 response to 200 response after waiting seconds", function(done){
+            this.timeout(10000);
+            
+            fetchXhrHook.onResponse(function(req, res, cb){
+              window.setTimeout(function(){
+                cb({
+                  ...res,
+                  status: 200,
+                  statusText: "OK",
+                  response: "it's dummy but it's OK",
+                  responseText: "it's dummy but it's OK",
+                });
+              }, 3000);
+            });
+  
+            var start = Date.now();
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", authRequiredResponseUrl);
+            xhr.onreadystatechange = function(){
+              if(this.readyState === xhr.DONE){
+                expect(this.status).to.be(200);
+                expect(Date.now() - start).to.be.greaterThan(3000);
+                done();
+              }
+            };
+            xhr.send();
+          });
+          it("ignores Exception in response callback in proxy", function(done){
+            fetchXhrHook.onResponse(function(req, res, cb){
+              throw new Error("error");
+            });
+    
+            fetchXhrHook.onResponse(function(req, res, cb){
+              cb({
+                ...res,
+                status: 200,
+                statusText: "OK",
+              });
+            });
+    
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", authRequiredResponseUrl);
+            xhr.onreadystatechange = function(){
+              if(this.readyState === xhr.DONE){
+                expect(this.status).to.be(200);
+                done();
+              }
+            }
+            xhr.send();
+          });
+          it("does not return fake response when response object is not supplied to callback function", function(done){
+            fetchXhrHook.onResponse(function(req, res, cb){
+              cb(false);
+            });
+    
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", authRequiredResponseUrl);
+            xhr.onreadystatechange = function(){
+              if(this.readyState === xhr.DONE){
+                expect(this.status).to.be(401);
+                done();
+              }
+            }
             xhr.send();
           });
         });
