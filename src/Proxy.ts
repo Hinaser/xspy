@@ -8,7 +8,7 @@ export class Proxy {
   private static _customXHR = window.XMLHttpRequest;
   private static _customFetch = window.fetch;
   public static readonly OriginalXHR = window.XMLHttpRequest;
-  public static readonly OriginalFetch = window.fetch;
+  public static readonly OriginalFetch = window.fetch.bind(window);
   
   public static enable() {
     window.XMLHttpRequest = Proxy._customXHR;

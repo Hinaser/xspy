@@ -29,11 +29,10 @@ class FetchProxy {
           return;
         }
         
-        Proxy.OriginalFetch(this._request).then(response => {
-          this._response = {
-            ...response,
-            ajaxType: "fetch",
-          };
+        Proxy.OriginalFetch(this._request.url, this._request).then(response => {
+          const res = response as FetchResponse;
+          res.ajaxType = "fetch";
+          this._response = res;
           
           this._onResponse().then(r => {
             resolve(r);
@@ -84,13 +83,13 @@ class FetchProxy {
   }
   
   private _onResponse(){
-    return new Promise<FetchResponse>((resolve => {
+    return new Promise<Response>((resolve => {
       let isReturnResponseCalled = false;
   
       const returnResponse = () => {
         isReturnResponseCalled = true;
-        
-        resolve(this._response);
+        const res = new Response(this._response.body, this._response);
+        resolve(res);
       };
   
       const responseListeners = Proxy.getResponseListeners();
@@ -136,40 +135,57 @@ class FetchProxy {
   }
   
   private static _createRequest(input: RequestInfo, init?: RequestInit): FetchRequest {
-    return {
-      ...new Request(input, init),
-      ajaxType: "fetch",
-      timeout: 0,
-    };
+    if(typeof input === "string"){
+      const req = {
+        ajaxType: "fetch",
+        ...(init||{}),
+        url: input,
+      } as FetchRequest;
+      
+      if(init && init.headers){
+        req.headers = init.headers instanceof Headers ? init.headers : new Headers(init.headers);
+      }
+      
+      return req;
+    }
+    else{
+      const req = {
+        ajaxType: "fetch",
+        ...(input||{}),
+        ...(init||{}),
+        timeout: 0,
+      } as FetchRequest;
+  
+      if(init && init.headers){
+        req.headers = init.headers instanceof Headers ? init.headers : new Headers(init.headers);
+      }
+      
+      return req;
+    }
   }
   
   private static _createResponse(body?: BodyInit | null, init?: ResponseInit): FetchResponse {
-    return {
-      ...new Response(body, init),
-      ajaxType: "fetch",
-      status: 0,
-      statusText: "",
-      headers: new Headers(),
-    };
+    const res = new Response(body, init) as FetchResponse;
+    res.ajaxType = "fetch";
+    return res;
   }
   
   private _createRequestCallback(onCalled: () => unknown): RequestCallback<"fetch"> {
     type RequestCallbackOnlyWithDefaultFunc = {
-      (dummyResponse: TResponse<"fetch">): unknown;
+      (dummyResponse: FetchResponse): unknown;
       moveToHeaderReceived?: (dummyResponse: TResponse<"fetch">) => void;
       moveToLoading?: (dummyResponse: TResponse<"fetch">) => void;
     };
   
-    const cb: RequestCallbackOnlyWithDefaultFunc = (response: TResponse<"fetch">) => {
+    const cb: RequestCallbackOnlyWithDefaultFunc = (response: FetchResponse) => {
       if(!response || typeof response !== "object"){
         onCalled();
         return;
       }
   
-      this._response = {
-        ...this._response,
-        ...response,
-      };
+      const res = new Response(response.body, response) as FetchResponse;
+      res.ajaxType = "fetch";
+      this._response = res;
     };
     
     cb.moveToHeaderReceived = () => { return; };

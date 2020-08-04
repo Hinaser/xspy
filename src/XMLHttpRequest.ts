@@ -30,7 +30,7 @@ export class XHRProxy implements XMLHttpRequest {
   public timeout: number = 0;
   public readonly upload = this._xhr.upload;
   
-  public response: Document|string|null = "";
+  public response: BodyInit|Document|null = "";
   public responseText: string = "";
   public responseType: XMLHttpRequestResponseType = "";
   public responseURL: string = "";
@@ -189,7 +189,7 @@ export class XHRProxy implements XMLHttpRequest {
       throw new DOMException("XMLHttpRequest state must be OPENED");
     }
   
-    this._setupVirtualRequestForSending();
+    this._setupVirtualRequestForSending(body);
     this._syncEventListenersToXHR();
     
     let isDispatchXHRSendCalled = false;
@@ -197,9 +197,6 @@ export class XHRProxy implements XMLHttpRequest {
     const dispatchXHRSend = () => {
       isDispatchXHRSendCalled = true;
       
-      // Re-sync
-      this._setupVirtualRequestForSending();
-    
       // When requestCallback is used, readystate is automatically move forward to 'DONE'
       // and produce dummy response.
       if(this._readyState === this.DONE){
@@ -285,6 +282,10 @@ export class XHRProxy implements XMLHttpRequest {
   public setRequestHeader(name: string, value: string) {
     if(this.readyState !== this.OPENED){
       throw new DOMException("XMLHttpRequest state must be OPENED");
+    }
+    
+    if(!this._request.headers){
+      this._request.headers = {};
     }
     
     const lowerName = name.toLowerCase();
@@ -508,6 +509,8 @@ export class XHRProxy implements XMLHttpRequest {
   private _syncHeaderFromVirtualResponse(){
     this.status = this._response.status;
     this.statusText = this._response.statusText;
+    // Response headers will be requested via getResponseHeader/getAllResponseHeaders
+    // which get header values directly from this._response.
   }
   
   private _syncBodyFromVirtualResponse(){
@@ -516,6 +519,9 @@ export class XHRProxy implements XMLHttpRequest {
     }
     if("responseXML" in this._response){
       this.responseXML = this._response.responseXML || null;
+    }
+    if("body" in this._response){
+      this.response = this._response.body || null;
     }
     if("response" in this._response){
       this.response = this._response.response || null;

@@ -30,9 +30,9 @@ export interface TRequest<T extends "xhr"|"fetch"> {
   ajaxType: T;
   method: string;
   url: string;
-  headers: T extends "xhr" ? Record<string, string> : Headers;
   timeout: number;
-  body?: T extends "xhr" ? BodyInit | null | Document : ReadableStream<Uint8Array> | null;
+  headers?: T extends "xhr" ? Record<string, string> : Headers | HeadersInit;
+  body?: T extends "xhr" ? BodyInit | null | Document : BodyInit | null;
 }
 
 export interface XhrRequest extends TRequest<"xhr"> {
@@ -44,29 +44,54 @@ export interface XhrRequest extends TRequest<"xhr"> {
   upload?: XMLHttpRequestUpload;
 }
 
-export interface FetchRequest extends TRequest<"fetch">, Request {
-  body: ReadableStream<Uint8Array> | null;
-  headers: Headers;
+export interface FetchRequest extends TRequest<"fetch"> {
   method: string;
   url: string;
+  headers?: Headers | HeadersInit;
+  body?: BodyInit | null;
+  cache?: RequestCache;
+  credentials?: RequestCredentials;
+  integrity?: string;
+  keepalive?: boolean;
+  mode?: RequestMode;
+  redirect?: RequestRedirect;
+  referrer?: string;
+  referrerPolicy?: ReferrerPolicy;
+  signal?: AbortSignal | null;
 }
 
 export interface TResponse<T extends "xhr"|"fetch"> {
   ajaxType: T;
   status: number;
   statusText: string;
+  headers: T extends "xhr" ? Record<string, string> : HeadersInit | Headers;
+  body?: T extends "xhr" ? BodyInit | null | Document : ReadableStream<Uint8Array> | null;
 }
 
 export interface XhrResponse extends TResponse<"xhr"> {
   headers: Record<string, string>;
   responseType: XMLHttpRequestResponseType;
-  response?: Document|string|null;
+  response?: BodyInit | null | Document;
   responseText?: string;
   responseXML?: Document|null;
   responseURL?: string;
 }
 
-export interface FetchResponse extends TResponse<"fetch">, Response {
+export interface FetchResponse extends TResponse<"fetch"> {
+  headers: HeadersInit | Headers;
+  ok: boolean;
+  redirected: boolean;
   status: number;
   statusText: string;
+  trailer: Promise<Headers>;
+  type: ResponseType;
+  url: string;
+  clone(): Response;
+  body: ReadableStream<Uint8Array> | null;
+  bodyUsed: boolean;
+  arrayBuffer(): Promise<ArrayBuffer>;
+  blob(): Promise<Blob>;
+  formData(): Promise<FormData>;
+  json(): Promise<any>;
+  text(): Promise<string>;
 }

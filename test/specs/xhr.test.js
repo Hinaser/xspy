@@ -489,7 +489,7 @@ describe("fetch-xhr-hook", function(){
           });
           it("status is 200 OK if authorization header is appended by hook script", function(done){
             fetchXhrHook.onRequest(function(req){
-              this.setRequestHeader("Authorization", "test-authorization");
+              req.headers["Authorization"] = "test-authorization"
             });
     
             var xhr = new XMLHttpRequest();
@@ -809,5 +809,59 @@ describe("fetch-xhr-hook", function(){
         });
       });
     });
+  });
+  describe("fetch-hook", function(){
+    const checkFetchBehavior = function(useHook){
+      describe(useHook ? "hooked fetch (fetchXhrHook enabled)" : "original fetch", function(){
+        before(function(){
+          if(useHook){
+            fetchXhrHook.enable();
+          }
+          else{
+            fetchXhrHook.disable();
+          }
+        });
+        
+        describe("takes first argument as url, second as option", function(){
+          it("does not throw an Error", function(done){
+            window.fetch(normalApiResponseUrl, {method: "GET"})
+              .then(res => {
+                done();
+              })
+              .catch(e => {
+                throw e;
+              })
+            ;
+          });
+          it("can parse response as json", function(done){
+            window.fetch(normalApiResponseUrl, {method: "GET"})
+              .then(res => res.json())
+              .then(json => {
+                expect(json).to.have.property("result");
+                expect(json.result).to.be("normal");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              })
+            ;
+          });
+          it("can parse response as text", function(done){
+            window.fetch(normalApiResponseUrl, {method: "GET"})
+              .then(res => res.text())
+              .then(text => {
+                expect(text).to.be("{\"result\":\"normal\"}");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              })
+            ;
+          });
+        });
+      });
+    };
+    checkFetchBehavior(false);
+    checkFetchBehavior(true);
   });
 });
