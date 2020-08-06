@@ -4,6 +4,7 @@ var timeoutApiResponseUrl = baseApiUrl + testConfig.path.api.timeout;
 var invalidXMLApiResponseUrl = baseApiUrl + testConfig.path.api.invalidXml;
 var authRequiredResponseUrl = baseApiUrl + testConfig.path.api.auth;
 var validXMLUrl = baseApiUrl + testConfig.path.api.validXml;
+var postUrl = baseApiUrl + testConfig.path.api.post;
 
 describe("fetch-xhr-hook", function(){
   describe("fetchXhrHook", function(){
@@ -203,6 +204,20 @@ describe("fetch-xhr-hook", function(){
               xhr.open("GET", normalApiResponseUrl, false);
               xhr.send();
               expect(xhr.status).to.be(200);
+            });
+            it("can post and receive json object", function(done){
+              var xhr = new XMLHttpRequest();
+              xhr.open("POST", postUrl);
+              var body = JSON.stringify({test: 1});
+              xhr.setRequestHeader("content-type", "application/json");
+              xhr.responseType = "json";
+              xhr.addEventListener("load", function(){
+                expect(this.status).to.be(200);
+                expect(this.response).to.have.property("test");
+                expect(this.response.test).to.be(true);
+                done();
+              });
+              xhr.send(body);
             });
             describe("responseType", function(){
               it("returns json response when responseType is set to 'json'", function(done){
@@ -504,14 +519,13 @@ describe("fetch-xhr-hook", function(){
           });
         });
         describe("hook request and return fake response", function(){
-          it("returns 200 response even if accessing url which requires Authroization header", function(done){
+          it("returns 200 response even if accessing url which requires Authorization header", function(done){
             this.timeout(10000);
             
             fetchXhrHook.onRequest(function(req, cb){
               cb({
                 status: 200,
-                text: "it's dummy",
-                data: "it's dummy",
+                body: "it's dummy",
               });
             });
             
@@ -520,6 +534,7 @@ describe("fetch-xhr-hook", function(){
             xhr.onreadystatechange = function(){
               if(this.readyState === xhr.DONE){
                 expect(this.status).to.be(200);
+                expect(this.response).to.be("it's dummy");
                 done();
               }
             };
@@ -529,8 +544,7 @@ describe("fetch-xhr-hook", function(){
             fetchXhrHook.onRequest(function(req, cb){
               cb({
                 status: 200,
-                text: "it's dummy",
-                data: "it's dummy",
+                body: "it's dummy",
               });
             });
     
@@ -578,8 +592,7 @@ describe("fetch-xhr-hook", function(){
               window.setTimeout(function(){
                 cb({
                   status: 200,
-                  text: "it's dummy",
-                  data: "it's dummy",
+                  body: "it's dummy",
                 });
               }, 3000);
             });
@@ -589,6 +602,7 @@ describe("fetch-xhr-hook", function(){
             xhr.onreadystatechange = function(){
               if(this.readyState === xhr.DONE){
                 expect(xhr.status).to.be(200);
+                expect(this.response).to.be("it's dummy");
                 done();
               }
             };
@@ -604,8 +618,7 @@ describe("fetch-xhr-hook", function(){
               });
               cb({
                 status: 200,
-                text: "it's dummy",
-                data: "it's dummy",
+                body: "it's dummy",
               });
             });
     
@@ -621,6 +634,7 @@ describe("fetch-xhr-hook", function(){
               }
               if(this.readyState === xhr.DONE){
                 expect(xhr.status).to.be(200);
+                expect(this.response).to.be("it's dummy");
                 done();
               }
             };
@@ -630,8 +644,7 @@ describe("fetch-xhr-hook", function(){
             fetchXhrHook.onRequest(function(req, cb){
               cb({
                 status: 200,
-                text: "it's dummy",
-                data: "it's dummy",
+                body: "it's dummy",
               });
               cb.moveToHeaderReceived({
                 headers: {"test-header": "aaa"},
@@ -652,6 +665,7 @@ describe("fetch-xhr-hook", function(){
               }
               if(this.readyState === xhr.DONE){
                 expect(xhr.status).to.be(200);
+                expect(this.response).to.be("it's dummy");
                 done();
               }
             };
@@ -664,8 +678,7 @@ describe("fetch-xhr-hook", function(){
               window.setTimeout(function(){
                 cb({
                   status: 200,
-                  text: "it's dummy",
-                  data: "it's dummy",
+                  body: "it's dummy",
                 });
               }, 2000);
             });
@@ -733,6 +746,7 @@ describe("fetch-xhr-hook", function(){
             xhr.onreadystatechange = function(){
               if(this.readyState === xhr.DONE){
                 expect(this.status).to.be(200);
+                expect(this.response).to.be("it's dummy but it's OK");
                 done();
               }
             };
@@ -752,7 +766,7 @@ describe("fetch-xhr-hook", function(){
                   response: "it's dummy but it's OK",
                   responseText: "it's dummy but it's OK",
                 });
-              }, 3000);
+              }, 3001);
             });
   
             var start = Date.now();
@@ -762,6 +776,7 @@ describe("fetch-xhr-hook", function(){
             xhr.onreadystatechange = function(){
               if(this.readyState === xhr.DONE){
                 expect(this.status).to.be(200);
+                expect(this.response).to.be("it's dummy but it's OK");
                 expect(Date.now() - start).to.be.greaterThan(3000);
                 done();
               }
@@ -858,10 +873,278 @@ describe("fetch-xhr-hook", function(){
               })
             ;
           });
+          it("can send request header", function(done){
+            var headers = {"Authorization": "test-auth"};
+            window.fetch(normalApiResponseUrl, {method: "GET", headers})
+              .then(res => {
+                expect(res.ok).to.be(true);
+                done();
+              })
+              .catch(e => {
+                throw e;
+              })
+            ;
+          });
+          it("can post json object", function(done){
+            var headers = {"content-type": "application/json"};
+            var body = JSON.stringify({test: 1});
+            window.fetch(postUrl, {method: "POST", headers, body})
+              .then(res => {
+                expect(res.ok).to.be(true);
+                return res.json();
+              })
+              .then(json => {
+                expect(json).to.have.property("test");
+                expect(json.test).to.be(true);
+                done();
+              })
+              .catch(e => {
+                throw e;
+              })
+            ;
+          });
         });
       });
     };
     checkFetchBehavior(false);
     checkFetchBehavior(true);
+    
+    describe("with hook", function(){
+      before(function(){
+        fetchXhrHook.clearAll();
+        fetchXhrHook.enable();
+      });
+  
+      beforeEach(function(){
+        fetchXhrHook.clearAll();
+      });
+  
+      describe("hook request", function(){
+        describe("Access to url which requires Authorization header", function(){
+          it("status is 403 unauthorized if no authorization header is appended", function(done){
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(401);
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+          it("status is 200 OK if authorization header is appended by hook script", function(done){
+            fetchXhrHook.onRequest(function(req){
+              req.headers["Authorization"] = "test-authorization"
+            });
+  
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(200);
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+        });
+        describe("hook request and return fake response", function(){
+          it("returns 200 response even if accessing url which requires Authorization header", function(done){
+            fetchXhrHook.onRequest(function(req, cb){
+              cb({
+                status: 200,
+                body: "it's dummy",
+              });
+            });
+  
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(200);
+                return res.text();
+              })
+              .then(text => {
+                expect(text).to.be("it's dummy");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+          it("does not actually send xhr request until calling xhr callback", function(done){
+            this.timeout(4000);
+            var start = Date.now();
+            
+            fetchXhrHook.onRequest(function(req, cb){
+              window.setTimeout(function(){
+                cb({
+                  status: 200,
+                  body: "it's dummy",
+                });
+              }, 3001);
+            });
+  
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(Date.now() - start).greaterThan(3000);
+                expect(res.status).to.be(200);
+                return res.text();
+              })
+              .then(text => {
+                expect(text).to.be("it's dummy");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+          it("returns fake headers by callback function", function(done){
+            fetchXhrHook.onRequest(function(req, cb){
+              cb({
+                status: 200,
+                body: "it's dummy",
+                headers: {"test-header": "aaa"},
+              });
+            });
+  
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(200);
+                expect(res.headers.get("test-header")).to.be("aaa");
+                return res.text();
+              })
+              .then(text => {
+                expect(text).to.be("it's dummy");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+          it("does not send fake response when response object is not supplied to callback function", function(done){
+            fetchXhrHook.onRequest(function(req, cb){
+              cb(false);
+            });
+  
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(401);
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+          it("ignores Exception in request callback in proxy", function(done){
+            fetchXhrHook.onRequest(function(req, cb){
+              throw new Error("error");
+            });
+        
+            fetchXhrHook.onRequest(function(req, cb){
+              cb({
+                status: 200,
+                statusText: "OK",
+              });
+            });
+  
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(200);
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+        });
+        describe("hook response", function(){
+          it("replace failed 401 response to 200 response", function(done){
+            fetchXhrHook.onResponse(function(req, res){
+              res.status = 200;
+              res.statusText = "OK";
+              res.body = "it's dummy but it's OK";
+            });
+  
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(200);
+                return res.text();
+              })
+              .then(text => {
+                expect(text).to.be("it's dummy but it's OK");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+        });
+        describe("hook response with response callback", function(){
+          it("replace failed 401 response to 200 response after waiting seconds", function(done){
+            this.timeout(10000);
+        
+            fetchXhrHook.onResponse(function(req, res, cb){
+              window.setTimeout(function(){
+                cb({
+                  ...res,
+                  status: 200,
+                  statusText: "OK",
+                  body: "it's dummy but it's OK",
+                });
+              }, 3001);
+            });
+        
+            var start = Date.now();
+  
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(200);
+                expect(Date.now() - start).to.be.greaterThan(3000);
+                return res.text();
+              })
+              .then(text => {
+                expect(text).to.be("it's dummy but it's OK");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+          it("ignores Exception in response callback in proxy", function(done){
+            fetchXhrHook.onResponse(function(req, res, cb){
+              throw new Error("error");
+            });
+        
+            fetchXhrHook.onResponse(function(req, res, cb){
+              cb({
+                ...res,
+                status: 200,
+                statusText: "OK",
+              });
+            });
+  
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(200);
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+          it("does not return fake response when response object is not supplied to callback function", function(done){
+            fetchXhrHook.onResponse(function(req, res, cb){
+              cb(false);
+            });
+  
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(401);
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+        });
+      });
+    });
   });
 });

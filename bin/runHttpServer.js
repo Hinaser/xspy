@@ -4,6 +4,7 @@ const config = require("../test.config");
 
 const app = express();
 
+app.use(express.json());
 app.use("/node_modules", express.static(path.join(__dirname, "../node_modules")));
 app.use("/test.config.js", express.static(path.join(__dirname, "../test.config.js")));
 app.use(config.path.test, express.static(path.join(__dirname, "../test")));
@@ -32,6 +33,15 @@ app.get(config.path.api.auth, function (req, res) {
   }
   
   res.status(401).end();
+});
+app.post(config.path.api.post, function (req, res) {
+  if(req.method === "POST" && typeof req.body === "object" && req.body.test === 1){
+    res.json({test: true});
+    return;
+  }
+  else{
+    res.status(400).send(req.body);
+  }
 });
 
 const server = app.listen(config.port);

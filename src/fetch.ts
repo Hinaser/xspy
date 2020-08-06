@@ -1,5 +1,6 @@
 import {Proxy} from "./Proxy";
 import {FetchRequest, FetchResponse, RequestCallback, ResponseCallback, TResponse} from "./index.type";
+import {ResponseProxy} from "./Response";
 
 class FetchProxy {
   private _request: FetchRequest;
@@ -10,6 +11,12 @@ class FetchProxy {
   public constructor(input: RequestInfo, init?: RequestInit) {
     this._input = input;
     this._init = init;
+  
+    this.dispatch = this.dispatch.bind(this);
+    this._onResponse = this._onResponse.bind(this);
+    this._createRequestCallback = this._createRequestCallback.bind(this);
+    this._createResponseCallback = this._createResponseCallback.bind(this);
+    
     this._request = FetchProxy._createRequest(input, init);
     this._response = FetchProxy._createResponse();
   }
@@ -30,9 +37,25 @@ class FetchProxy {
         }
         
         Proxy.OriginalFetch(this._request.url, this._request).then(response => {
-          const res = response as FetchResponse;
-          res.ajaxType = "fetch";
-          this._response = res;
+          const headers: Record<string, string> = {};
+          for(const key of response.headers.keys()){
+            const value = response.headers.get(key)
+            if(value){
+              headers[key] = value;
+            }
+          }
+          
+          this._response = {
+            ajaxType: "fetch",
+            status: response.status,
+            statusText: response.statusText,
+            headers,
+            ok: response.ok,
+            redirected: response.redirected,
+            type: response.type,
+            url: response.url,
+            body: response.body,
+          };
           
           this._onResponse().then(r => {
             resolve(r);
@@ -88,7 +111,11 @@ class FetchProxy {
   
       const returnResponse = () => {
         isReturnResponseCalled = true;
-        const res = new Response(this._response.body, this._response);
+        const res = new ResponseProxy(this._response.body, this._response);
+        res.url = this._response.url;
+        res.type = this._response.type;
+        res.redirected = this._response.redirected;
+        res.ok = this._response.ok;
         resolve(res);
       };
   
@@ -104,7 +131,7 @@ class FetchProxy {
           const l = responseListeners[listenerPointer];
       
           // l: (request, response, callback) => unknown
-          if(l.length >= 2){
+          if(l.length >= 3){
             const userCallback = this._createResponseCallback(() => {
               listenerPointer++;
               executeNextListener();
@@ -138,36 +165,58 @@ class FetchProxy {
     if(typeof input === "string"){
       const req = {
         ajaxType: "fetch",
+        headers: {},
         ...(init||{}),
         url: input,
       } as FetchRequest;
       
       if(init && init.headers){
-        req.headers = init.headers instanceof Headers ? init.headers : new Headers(init.headers);
+        const headers = init.headers instanceof Headers ? init.headers : new Headers(init.headers);
+        for(const key of headers.keys()){
+          const value = headers.get(key);
+          if(value){
+            req.headers[key] = value;
+          }
+        }
       }
       
       return req;
     }
     else{
+      const headers = input.headers || (init && init.headers ? init.headers : null);
       const req = {
         ajaxType: "fetch",
         ...(input||{}),
         ...(init||{}),
+        headers: {},
         timeout: 0,
       } as FetchRequest;
   
-      if(init && init.headers){
-        req.headers = init.headers instanceof Headers ? init.headers : new Headers(init.headers);
+      if(headers){
+        for(const key of headers.keys()){
+          const value = headers.get(key);
+          if(value){
+            req.headers[key] = value;
+          }
+        }
       }
       
       return req;
     }
   }
   
-  private static _createResponse(body?: BodyInit | null, init?: ResponseInit): FetchResponse {
-    const res = new Response(body, init) as FetchResponse;
-    res.ajaxType = "fetch";
-    return res;
+  private static _createResponse(): FetchResponse {
+    return {
+      ajaxType: "fetch",
+      status: 0,
+      statusText: "",
+      headers: {},
+      ok: true,
+      redirected: false,
+      type: "basic",
+      url: "",
+      body: null,
+    };
   }
   
   private _createRequestCallback(onCalled: () => unknown): RequestCallback<"fetch"> {
@@ -183,9 +232,8 @@ class FetchProxy {
         return;
       }
   
-      const res = new Response(response.body, response) as FetchResponse;
-      res.ajaxType = "fetch";
-      this._response = res;
+      this._response = response;
+      onCalled();
     };
     
     cb.moveToHeaderReceived = () => { return; };
@@ -195,16 +243,13 @@ class FetchProxy {
   }
   
   private _createResponseCallback(onCalled: () => unknown) : ResponseCallback<"fetch"> {
-    return (response: TResponse<"fetch">) => {
+    return (response: FetchResponse) => {
       if(!response || typeof response !== "object"){
         onCalled();
         return;
       }
       
-      this._response = {
-        ...this._response,
-        ...response,
-      };
+      this._response = response;
       
       onCalled();
     };

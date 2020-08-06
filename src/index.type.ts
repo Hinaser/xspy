@@ -31,7 +31,7 @@ export interface TRequest<T extends "xhr"|"fetch"> {
   method: string;
   url: string;
   timeout: number;
-  headers?: T extends "xhr" ? Record<string, string> : Headers | HeadersInit;
+  headers: Record<string, string>;
   body?: T extends "xhr" ? BodyInit | null | Document : BodyInit | null;
 }
 
@@ -47,7 +47,6 @@ export interface XhrRequest extends TRequest<"xhr"> {
 export interface FetchRequest extends TRequest<"fetch"> {
   method: string;
   url: string;
-  headers?: Headers | HeadersInit;
   body?: BodyInit | null;
   cache?: RequestCache;
   credentials?: RequestCredentials;
@@ -64,8 +63,8 @@ export interface TResponse<T extends "xhr"|"fetch"> {
   ajaxType: T;
   status: number;
   statusText: string;
-  headers: T extends "xhr" ? Record<string, string> : HeadersInit | Headers;
-  body?: T extends "xhr" ? BodyInit | null | Document : ReadableStream<Uint8Array> | null;
+  headers: Record<string, string>;
+  body?: T extends "xhr" ? BodyInit | null | Document : BodyInit | null;
 }
 
 export interface XhrResponse extends TResponse<"xhr"> {
@@ -78,20 +77,12 @@ export interface XhrResponse extends TResponse<"xhr"> {
 }
 
 export interface FetchResponse extends TResponse<"fetch"> {
-  headers: HeadersInit | Headers;
-  ok: boolean;
-  redirected: boolean;
   status: number;
   statusText: string;
-  trailer: Promise<Headers>;
+  headers: Record<string, string>;
+  body: BodyInit | null;
+  ok: boolean;
+  redirected: boolean;
   type: ResponseType;
   url: string;
-  clone(): Response;
-  body: ReadableStream<Uint8Array> | null;
-  bodyUsed: boolean;
-  arrayBuffer(): Promise<ArrayBuffer>;
-  blob(): Promise<Blob>;
-  formData(): Promise<FormData>;
-  json(): Promise<any>;
-  text(): Promise<string>;
 }

@@ -10,6 +10,7 @@ const config = {
       invalidXml: "/api/invalid-xml",
       validXml: "/api/valid-xml",
       auth: "/api/auth",
+      post: "/api/post",
     },
   },
 };
