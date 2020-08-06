@@ -164,9 +164,9 @@ class FetchProxy {
   private static _createRequest(input: RequestInfo, init?: RequestInit): FetchRequest {
     if(typeof input === "string"){
       const req = {
+        ...(init||{}),
         ajaxType: "fetch",
         headers: {},
-        ...(init||{}),
         url: input,
       } as FetchRequest;
       
@@ -184,12 +184,26 @@ class FetchProxy {
     }
     else{
       const headers = input.headers || (init && init.headers ? init.headers : null);
+      
       const req = {
-        ajaxType: "fetch",
-        ...(input||{}),
         ...(init||{}),
-        headers: {},
+        ajaxType: "fetch",
+        method: input.method,
+        url: input.url,
         timeout: 0,
+        headers: {},
+        // input.body may be `undefined` since major browsers does not support it as of 2020/08/06.
+        // https://developer.mozilla.org/en-US/docs/Web/API/Request/Request#bcd:api.Request.Request
+        body: input.body,
+        cache: input.cache,
+        credentials: input.credentials,
+        integrity: input.integrity,
+        keepalive: input.keepalive,
+        mode: input.mode,
+        redirect: input.redirect,
+        referrer: input.referrer,
+        referrerPolicy: input.referrerPolicy,
+        signal: input.signal,
       } as FetchRequest;
   
       if(headers){

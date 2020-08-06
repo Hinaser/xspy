@@ -6,6 +6,18 @@ var authRequiredResponseUrl = baseApiUrl + testConfig.path.api.auth;
 var validXMLUrl = baseApiUrl + testConfig.path.api.validXml;
 var postUrl = baseApiUrl + testConfig.path.api.post;
 
+var userAgent = typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent : "";
+
+// If browser is not IE, IEVersion will be NaN
+var IEVersion = (function(){
+  var version = parseInt((/msie (\d+)/.exec(userAgent.toLowerCase()) || [])[1], 10);
+  if (isNaN(version)) {
+    return parseInt((/trident\/.*; rv:(\d+)/.exec(userAgent.toLowerCase()) || [])[1], 10);
+  }
+  return version;
+})();
+
+
 describe("fetch-xhr-hook", function(){
   describe("fetchXhrHook", function(){
     it("returns empty array if onRequest is not called", function(){
@@ -67,7 +79,7 @@ describe("fetch-xhr-hook", function(){
     });
   });
   describe("xhr-hook", function(){
-    const checkXhrBehavior = function(useHook){
+    var checkXhrBehavior = function(useHook){
       describe(useHook ? "hooked XMLHttpRequest (fetchXhrHook enabled)" : "original XMLHttpRequest (fetchXhrHook disabled)", function(){
         before(function(){
           if(useHook){
@@ -488,345 +500,348 @@ describe("fetch-xhr-hook", function(){
       beforeEach(function(){
         fetchXhrHook.clearAll();
       });
+  
+      describe("Access to url which requires Authorization header", function(){
+        it("status is 403 unauthorized if no authorization header is appended", function(done){
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              expect(this.status).to.be(401);
+              done();
+            }
+          };
+          xhr.send();
+        });
+        it("status is 200 OK if authorization header is appended by hook script", function(done){
+          fetchXhrHook.onRequest(function(req){
+            req.headers["Authorization"] = "test-authorization"
+          });
       
-      describe("hook request", function(){
-        describe("Access to url which requires Authorization header", function(){
-          it("status is 403 unauthorized if no authorization header is appended", function(done){
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.DONE){
-                expect(this.status).to.be(401);
-                done();
-              }
-            };
-            xhr.send();
-          });
-          it("status is 200 OK if authorization header is appended by hook script", function(done){
-            fetchXhrHook.onRequest(function(req){
-              req.headers["Authorization"] = "test-authorization"
-            });
-    
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.DONE){
-                expect(this.status).to.be(200);
-                done();
-              }
-            };
-            xhr.send();
-          });
-        });
-        describe("hook request and return fake response", function(){
-          it("returns 200 response even if accessing url which requires Authorization header", function(done){
-            this.timeout(10000);
-            
-            fetchXhrHook.onRequest(function(req, cb){
-              cb({
-                status: 200,
-                body: "it's dummy",
-              });
-            });
-            
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.DONE){
-                expect(this.status).to.be(200);
-                expect(this.response).to.be("it's dummy");
-                done();
-              }
-            };
-            xhr.send();
-          });
-          it("event listeners are called when it is replaced with fake response ", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
-              cb({
-                status: 200,
-                body: "it's dummy",
-              });
-            });
-    
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            
-            var calledFunctions = [];
-            var assertOnCall = function(name){ return function(){calledFunctions.push(name)}; };
-            xhr.onloadstart = assertOnCall("onloadstart");
-            xhr.onload = assertOnCall("onload");
-            xhr.onloadend = assertOnCall("onloadend");
-            xhr.addEventListener("loadstart", assertOnCall("onloadstartListener"));
-            xhr.addEventListener("load", assertOnCall("onloadListener"));
-            xhr.addEventListener("loadend", assertOnCall("onloadendListener"));
-            
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.HEADERS_RECEIVED){
-                calledFunctions.push("HEADERS_RECEIVED");
-              }
-              if(this.readyState === xhr.LOADING){
-                calledFunctions.push("LOADING");
-              }
-              if(this.readyState === xhr.DONE){
-                expect(calledFunctions.filter(f => f === "HEADERS_RECEIVED")).to.have.length(1);
-                expect(calledFunctions.filter(f => f === "LOADING")).to.have.length(1);
-                expect(calledFunctions.filter(f => f === "onloadstart")).to.have.length(1);
-                expect(calledFunctions.filter(f => f === "onloadstartListener")).to.have.length(1);
-              }
-            };
-            
-            xhr.addEventListener("loadend", function(){
-              expect(calledFunctions.filter(f => f === "onload")).to.have.length(1);
-              expect(calledFunctions.filter(f => f === "onloadend")).to.have.length(1);
-              expect(calledFunctions.filter(f => f === "onloadListener")).to.have.length(1);
-              expect(calledFunctions.filter(f => f === "onloadendListener")).to.have.length(1);
-              done();
-            });
-            
-            xhr.send();
-          });
-          it("does not actually send xhr request until calling xhr callback", function(done){
-            this.timeout(10000);
-            
-            fetchXhrHook.onRequest(function(req, cb){
-              window.setTimeout(function(){
-                cb({
-                  status: 200,
-                  body: "it's dummy",
-                });
-              }, 3000);
-            });
-  
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.DONE){
-                expect(xhr.status).to.be(200);
-                expect(this.response).to.be("it's dummy");
-                done();
-              }
-            };
-            xhr.send();
-          });
-          it("returns fake headers by callback function", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
-              cb.moveToHeaderReceived({
-                headers: {"test-header": "aaa"},
-              });
-              cb.moveToLoading({
-                headers: {"test-header2": "bbb"},
-              });
-              cb({
-                status: 200,
-                body: "it's dummy",
-              });
-            });
-    
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.HEADERS_RECEIVED){
-                expect(xhr.getResponseHeader("test-header")).to.be("aaa");
-              }
-              if(this.readyState === xhr.LOADING){
-                expect(xhr.getResponseHeader("test-header")).to.be(null);
-                expect(xhr.getResponseHeader("test-header2")).to.be("bbb");
-              }
-              if(this.readyState === xhr.DONE){
-                expect(xhr.status).to.be(200);
-                expect(this.response).to.be("it's dummy");
-                done();
-              }
-            };
-            xhr.send();
-          });
-          it("returns no headers by callback functions after readyState is DONE", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
-              cb({
-                status: 200,
-                body: "it's dummy",
-              });
-              cb.moveToHeaderReceived({
-                headers: {"test-header": "aaa"},
-              });
-              cb.moveToLoading({
-                headers: {"test-header2": "bbb"},
-              });
-            });
-    
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.HEADERS_RECEIVED){
-                expect(xhr.getResponseHeader("test-header")).to.be(null);
-              }
-              if(this.readyState === xhr.LOADING){
-                expect(xhr.getResponseHeader("test-header")).to.be(null);
-              }
-              if(this.readyState === xhr.DONE){
-                expect(xhr.status).to.be(200);
-                expect(this.response).to.be("it's dummy");
-                done();
-              }
-            };
-            xhr.send();
-          });
-          it("calls onabort event listener abort when response is paused in callback function", function(done){
-            this.timeout(10000);
-            
-            fetchXhrHook.onRequest(function(req, cb){
-              window.setTimeout(function(){
-                cb({
-                  status: 200,
-                  body: "it's dummy",
-                });
-              }, 2000);
-            });
-    
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onabort = function(){
-              expect(this.status).to.be(0);
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              expect(this.status).to.be(200);
               done();
             }
-            xhr.send();
-            xhr.abort();
-          });
-          it("does not send fake response when response object is not supplied to callback function", function(done){
-            this.timeout(10000);
-  
-            fetchXhrHook.onRequest(function(req, cb){
-              cb(false);
+          };
+          xhr.send();
+        });
+      });
+      describe("hook request and return fake response", function(){
+        it("returns 200 response even if accessing url which requires Authorization header", function(done){
+          this.timeout(10000);
+      
+          fetchXhrHook.onRequest(function(req, cb){
+            cb({
+              status: 200,
+              body: "it's dummy",
             });
-    
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.DONE){
-                expect(this.status).to.be(401);
-                done();
-              }
+          });
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              expect(this.status).to.be(200);
+              expect(this.response).to.be("it's dummy");
+              done();
             }
-            xhr.send();
-          });
-          it("ignores Exception in request callback in proxy", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
-              throw new Error("error");
+          };
+          xhr.send();
+        });
+        it("event listeners are called when it is replaced with fake response ", function(done){
+          fetchXhrHook.onRequest(function(req, cb){
+            cb({
+              status: 200,
+              body: "it's dummy",
             });
-  
-            fetchXhrHook.onRequest(function(req, cb){
+          });
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+      
+          var calledFunctions = [];
+          var assertOnCall = function(name){ return function(){calledFunctions.push(name)}; };
+          xhr.onloadstart = assertOnCall("onloadstart");
+          xhr.onload = assertOnCall("onload");
+          xhr.onloadend = assertOnCall("onloadend");
+          xhr.addEventListener("loadstart", assertOnCall("onloadstartListener"));
+          xhr.addEventListener("load", assertOnCall("onloadListener"));
+          xhr.addEventListener("loadend", assertOnCall("onloadendListener"));
+      
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.HEADERS_RECEIVED){
+              calledFunctions.push("HEADERS_RECEIVED");
+            }
+            if(this.readyState === xhr.LOADING){
+              calledFunctions.push("LOADING");
+            }
+            if(this.readyState === xhr.DONE){
+              expect(calledFunctions.filter(f => f === "HEADERS_RECEIVED")).to.have.length(1);
+              expect(calledFunctions.filter(f => f === "LOADING")).to.have.length(1);
+              expect(calledFunctions.filter(f => f === "onloadstart")).to.have.length(1);
+              expect(calledFunctions.filter(f => f === "onloadstartListener")).to.have.length(1);
+            }
+          };
+      
+          xhr.addEventListener("loadend", function(){
+            expect(calledFunctions.filter(f => f === "onload")).to.have.length(1);
+            expect(calledFunctions.filter(f => f === "onloadend")).to.have.length(1);
+            expect(calledFunctions.filter(f => f === "onloadListener")).to.have.length(1);
+            expect(calledFunctions.filter(f => f === "onloadendListener")).to.have.length(1);
+            done();
+          });
+      
+          xhr.send();
+        });
+        it("does not actually send xhr request until calling xhr callback", function(done){
+          this.timeout(10000);
+      
+          fetchXhrHook.onRequest(function(req, cb){
+            window.setTimeout(function(){
               cb({
                 status: 200,
-                statusText: "OK",
+                body: "it's dummy",
               });
-            });
-  
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.DONE){
-                expect(this.status).to.be(200);
-                done();
-              }
+            }, 3000);
+          });
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              expect(xhr.status).to.be(200);
+              expect(this.response).to.be("it's dummy");
+              done();
             }
-            xhr.send();
-          });
+          };
+          xhr.send();
         });
-        describe("hook response", function(){
-          it("replace failed 401 response to 200 response", function(done){
-            fetchXhrHook.onResponse(function(req, res){
-              res.status = 200;
-              res.statusText = "OK";
-              res.response = "it's dummy but it's OK";
-              res.responseText = "it's dummy but it's OK";
+        it("returns fake headers by callback function", function(done){
+          fetchXhrHook.onRequest(function(req, cb){
+            cb.moveToHeaderReceived({
+              headers: {"test-header": "aaa"},
             });
-  
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.DONE){
-                expect(this.status).to.be(200);
-                expect(this.response).to.be("it's dummy but it's OK");
-                done();
-              }
-            };
-            xhr.send();
+            cb.moveToLoading({
+              headers: {"test-header2": "bbb"},
+            });
+            cb({
+              status: 200,
+              body: "it's dummy",
+            });
           });
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.HEADERS_RECEIVED){
+              expect(xhr.getResponseHeader("test-header")).to.be("aaa");
+            }
+            if(this.readyState === xhr.LOADING){
+              expect(xhr.getResponseHeader("test-header")).to.be(null);
+              expect(xhr.getResponseHeader("test-header2")).to.be("bbb");
+            }
+            if(this.readyState === xhr.DONE){
+              expect(xhr.status).to.be(200);
+              expect(this.response).to.be("it's dummy");
+              done();
+            }
+          };
+          xhr.send();
         });
-        describe("hook response with response callback", function(){
-          it("replace failed 401 response to 200 response after waiting seconds", function(done){
-            this.timeout(10000);
-            
-            fetchXhrHook.onResponse(function(req, res, cb){
-              window.setTimeout(function(){
-                cb({
-                  ...res,
-                  status: 200,
-                  statusText: "OK",
-                  response: "it's dummy but it's OK",
-                  responseText: "it's dummy but it's OK",
-                });
-              }, 3001);
+        it("returns no headers by callback functions after readyState is DONE", function(done){
+          fetchXhrHook.onRequest(function(req, cb){
+            cb({
+              status: 200,
+              body: "it's dummy",
             });
-  
-            var start = Date.now();
-            
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.DONE){
-                expect(this.status).to.be(200);
-                expect(this.response).to.be("it's dummy but it's OK");
-                expect(Date.now() - start).to.be.greaterThan(3000);
-                done();
-              }
-            };
-            xhr.send();
+            cb.moveToHeaderReceived({
+              headers: {"test-header": "aaa"},
+            });
+            cb.moveToLoading({
+              headers: {"test-header2": "bbb"},
+            });
           });
-          it("ignores Exception in response callback in proxy", function(done){
-            fetchXhrHook.onResponse(function(req, res, cb){
-              throw new Error("error");
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.HEADERS_RECEIVED){
+              expect(xhr.getResponseHeader("test-header")).to.be(null);
+            }
+            if(this.readyState === xhr.LOADING){
+              expect(xhr.getResponseHeader("test-header")).to.be(null);
+            }
+            if(this.readyState === xhr.DONE){
+              expect(xhr.status).to.be(200);
+              expect(this.response).to.be("it's dummy");
+              done();
+            }
+          };
+          xhr.send();
+        });
+        it("calls onabort event listener abort when response is paused in callback function", function(done){
+          this.timeout(10000);
+      
+          fetchXhrHook.onRequest(function(req, cb){
+            window.setTimeout(function(){
+              cb({
+                status: 200,
+                body: "it's dummy",
+              });
+            }, 2000);
+          });
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onabort = function(){
+            expect(this.status).to.be(0);
+            done();
+          }
+          xhr.send();
+          xhr.abort();
+        });
+        it("does not send fake response when response object is not supplied to callback function", function(done){
+          this.timeout(10000);
+      
+          fetchXhrHook.onRequest(function(req, cb){
+            cb(false);
+          });
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              expect(this.status).to.be(401);
+              done();
+            }
+          }
+          xhr.send();
+        });
+        it("ignores Exception in request callback in proxy", function(done){
+          fetchXhrHook.onRequest(function(req, cb){
+            throw new Error("error");
+          });
+      
+          fetchXhrHook.onRequest(function(req, cb){
+            cb({
+              status: 200,
+              statusText: "OK",
             });
-    
-            fetchXhrHook.onResponse(function(req, res, cb){
+          });
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              expect(this.status).to.be(200);
+              done();
+            }
+          }
+          xhr.send();
+        });
+      });
+      describe("hook response", function(){
+        it("replace failed 401 response to 200 response", function(done){
+          fetchXhrHook.onResponse(function(req, res){
+            res.status = 200;
+            res.statusText = "OK";
+            res.response = "it's dummy but it's OK";
+            res.responseText = "it's dummy but it's OK";
+          });
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              expect(this.status).to.be(200);
+              expect(this.response).to.be("it's dummy but it's OK");
+              done();
+            }
+          };
+          xhr.send();
+        });
+      });
+      describe("hook response with response callback", function(){
+        it("replace failed 401 response to 200 response after waiting seconds", function(done){
+          this.timeout(10000);
+      
+          fetchXhrHook.onResponse(function(req, res, cb){
+            window.setTimeout(function(){
               cb({
                 ...res,
                 status: 200,
                 statusText: "OK",
+                response: "it's dummy but it's OK",
+                responseText: "it's dummy but it's OK",
               });
-            });
-    
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.DONE){
-                expect(this.status).to.be(200);
-                done();
-              }
-            }
-            xhr.send();
+            }, 3001);
           });
-          it("does not return fake response when response object is not supplied to callback function", function(done){
-            fetchXhrHook.onResponse(function(req, res, cb){
-              cb(false);
-            });
-    
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", authRequiredResponseUrl);
-            xhr.onreadystatechange = function(){
-              if(this.readyState === xhr.DONE){
-                expect(this.status).to.be(401);
-                done();
-              }
+      
+          var start = Date.now();
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              expect(this.status).to.be(200);
+              expect(this.response).to.be("it's dummy but it's OK");
+              expect(Date.now() - start).to.be.greaterThan(3000);
+              done();
             }
-            xhr.send();
+          };
+          xhr.send();
+        });
+        it("ignores Exception in response callback in proxy", function(done){
+          fetchXhrHook.onResponse(function(req, res, cb){
+            throw new Error("error");
           });
+      
+          fetchXhrHook.onResponse(function(req, res, cb){
+            cb({
+              ...res,
+              status: 200,
+              statusText: "OK",
+            });
+          });
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              expect(this.status).to.be(200);
+              done();
+            }
+          }
+          xhr.send();
+        });
+        it("does not return fake response when response object is not supplied to callback function", function(done){
+          fetchXhrHook.onResponse(function(req, res, cb){
+            cb(false);
+          });
+      
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              expect(this.status).to.be(401);
+              done();
+            }
+          }
+          xhr.send();
         });
       });
     });
   });
   describe("fetch-hook", function(){
-    const checkFetchBehavior = function(useHook){
+    // Skip fetch test if browser is IE
+    if(!isNaN(IEVersion)){
+      this.skip();
+    }
+    
+    var checkFetchBehavior = function(useHook){
       describe(useHook ? "hooked fetch (fetchXhrHook enabled)" : "original fetch", function(){
         before(function(){
           if(useHook){
@@ -874,8 +889,8 @@ describe("fetch-xhr-hook", function(){
             ;
           });
           it("can send request header", function(done){
-            var headers = {"Authorization": "test-auth"};
-            window.fetch(normalApiResponseUrl, {method: "GET", headers})
+            var headers = {"Authorization": "test-authorization"};
+            window.fetch(authRequiredResponseUrl, {method: "GET", headers})
               .then(res => {
                 expect(res.ok).to.be(true);
                 done();
@@ -885,10 +900,87 @@ describe("fetch-xhr-hook", function(){
               })
             ;
           });
-          it("can post json object", function(done){
+          it("can post json object in request body", function(done){
             var headers = {"content-type": "application/json"};
             var body = JSON.stringify({test: 1});
             window.fetch(postUrl, {method: "POST", headers, body})
+              .then(res => {
+                expect(res.ok).to.be(true);
+                return res.json();
+              })
+              .then(json => {
+                expect(json).to.have.property("test");
+                expect(json.test).to.be(true);
+                done();
+              })
+              .catch(e => {
+                throw e;
+              })
+            ;
+          });
+        });
+        describe("takes first argument as Request", function(){
+          it("does not throw an Error", function(done){
+            var req = new Request(normalApiResponseUrl, {method: "GET"});
+            window.fetch(req)
+              .then(res => {
+                done();
+              })
+              .catch(e => {
+                throw e;
+              })
+            ;
+          });
+          it("can parse response as json", function(done){
+            var req = new Request(normalApiResponseUrl, {method: "GET"});
+            window.fetch(req)
+              .then(res => res.json())
+              .then(json => {
+                expect(json).to.have.property("result");
+                expect(json.result).to.be("normal");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              })
+            ;
+          });
+          it("can parse response as text", function(done){
+            var req = new Request(normalApiResponseUrl, {method: "GET"});
+            window.fetch(req)
+              .then(res => res.text())
+              .then(text => {
+                expect(text).to.be("{\"result\":\"normal\"}");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              })
+            ;
+          });
+          it("can send request header", function(done){
+            var headers = {"Authorization": "test-authorization"};
+            var req = new Request(authRequiredResponseUrl, {method: "GET", headers});
+            window.fetch(req)
+              .then(res => {
+                expect(res.ok).to.be(true);
+                done();
+              })
+              .catch(e => {
+                throw e;
+              })
+            ;
+          });
+          it("can post json object in request body (Skipping because major browsers does not support sending body with Request instance for now.)", function(done){
+            // Major browsers does not support sending body with Request object as of 2020/08/06.
+            // https://developer.mozilla.org/en-US/docs/Web/API/Request/Request#bcd:api.Request.Request
+            // So skip this test.
+            this.skip();
+            
+            var headers = {"content-type": "application/json"};
+            var body = JSON.stringify({test: 1});
+            var req = new Request(postUrl, {method: "POST", headers, body});
+            window.fetch(req)
               .then(res => {
                 expect(res.ok).to.be(true);
                 return res.json();
@@ -919,156 +1011,269 @@ describe("fetch-xhr-hook", function(){
         fetchXhrHook.clearAll();
       });
   
-      describe("hook request", function(){
-        describe("Access to url which requires Authorization header", function(){
-          it("status is 403 unauthorized if no authorization header is appended", function(done){
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(401);
-                done();
-              })
-              .catch(e => {
-                throw e;
-              });
-          });
-          it("status is 200 OK if authorization header is appended by hook script", function(done){
-            fetchXhrHook.onRequest(function(req){
-              req.headers["Authorization"] = "test-authorization"
+      describe("Access to url which requires Authorization header", function(){
+        it("status is 403 unauthorized if no authorization header is appended", function(done){
+          window.fetch(authRequiredResponseUrl, {method: "GET"})
+            .then(res => {
+              expect(res.status).to.be(401);
+              done();
+            })
+            .catch(e => {
+              throw e;
             });
-  
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(200);
-                done();
-              })
-              .catch(e => {
-                throw e;
-              });
-          });
         });
-        describe("hook request and return fake response", function(){
-          it("returns 200 response even if accessing url which requires Authorization header", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
+        it("status is 200 OK if authorization header is appended by hook script", function(done){
+          fetchXhrHook.onRequest(function(req){
+            req.headers["Authorization"] = "test-authorization"
+          });
+      
+          window.fetch(authRequiredResponseUrl, {method: "GET"})
+            .then(res => {
+              expect(res.status).to.be(200);
+              done();
+            })
+            .catch(e => {
+              throw e;
+            });
+        });
+      });
+      describe("hook request and return fake response", function(){
+        it("returns 200 response even if accessing url which requires Authorization header", function(done){
+          fetchXhrHook.onRequest(function(req, cb){
+            expect(function(){
+              cb.moveToHeaderReceived();
+              cb.moveToLoading();
+            }).not.to.throwError();
+            cb({
+              status: 200,
+              body: "it's dummy",
+            });
+          });
+      
+          window.fetch(authRequiredResponseUrl, {method: "GET"})
+            .then(res => {
+              expect(res.status).to.be(200);
+              return res.text();
+            })
+            .then(text => {
+              expect(text).to.be("it's dummy");
+              done();
+            })
+            .catch(e => {
+              throw e;
+            });
+        });
+        it("does not actually send xhr request until calling xhr callback", function(done){
+          this.timeout(4000);
+          var start = Date.now();
+      
+          fetchXhrHook.onRequest(function(req, cb){
+            window.setTimeout(function(){
               cb({
                 status: 200,
                 body: "it's dummy",
               });
-            });
-  
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(200);
-                return res.text();
-              })
-              .then(text => {
-                expect(text).to.be("it's dummy");
-                done();
-              })
-              .catch(e => {
-                throw e;
-              });
+            }, 3001);
           });
-          it("does not actually send xhr request until calling xhr callback", function(done){
-            this.timeout(4000);
-            var start = Date.now();
-            
-            fetchXhrHook.onRequest(function(req, cb){
-              window.setTimeout(function(){
-                cb({
-                  status: 200,
-                  body: "it's dummy",
-                });
-              }, 3001);
+      
+          window.fetch(authRequiredResponseUrl, {method: "GET"})
+            .then(res => {
+              expect(Date.now() - start).greaterThan(3000);
+              expect(res.status).to.be(200);
+              return res.text();
+            })
+            .then(text => {
+              expect(text).to.be("it's dummy");
+              done();
+            })
+            .catch(e => {
+              throw e;
             });
-  
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(Date.now() - start).greaterThan(3000);
-                expect(res.status).to.be(200);
-                return res.text();
-              })
-              .then(text => {
-                expect(text).to.be("it's dummy");
-                done();
-              })
-              .catch(e => {
-                throw e;
-              });
-          });
-          it("returns fake headers by callback function", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
-              cb({
-                status: 200,
-                body: "it's dummy",
-                headers: {"test-header": "aaa"},
-              });
-            });
-  
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(200);
-                expect(res.headers.get("test-header")).to.be("aaa");
-                return res.text();
-              })
-              .then(text => {
-                expect(text).to.be("it's dummy");
-                done();
-              })
-              .catch(e => {
-                throw e;
-              });
-          });
-          it("does not send fake response when response object is not supplied to callback function", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
-              cb(false);
-            });
-  
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(401);
-                done();
-              })
-              .catch(e => {
-                throw e;
-              });
-          });
-          it("ignores Exception in request callback in proxy", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
-              throw new Error("error");
-            });
-        
-            fetchXhrHook.onRequest(function(req, cb){
-              cb({
-                status: 200,
-                statusText: "OK",
-              });
-            });
-  
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(200);
-                done();
-              })
-              .catch(e => {
-                throw e;
-              });
-          });
         });
-        describe("hook response", function(){
-          it("replace failed 401 response to 200 response", function(done){
+        it("returns fake headers by callback function", function(done){
+          fetchXhrHook.onRequest(function(req, cb){
+            cb({
+              status: 200,
+              body: "it's dummy",
+              headers: {"test-header": "aaa"},
+            });
+          });
+      
+          window.fetch(authRequiredResponseUrl, {method: "GET"})
+            .then(res => {
+              expect(res.status).to.be(200);
+              expect(res.headers.get("test-header")).to.be("aaa");
+              return res.text();
+            })
+            .then(text => {
+              expect(text).to.be("it's dummy");
+              done();
+            })
+            .catch(e => {
+              throw e;
+            });
+        });
+        it("does not send fake response when response object is not supplied to callback function", function(done){
+          fetchXhrHook.onRequest(function(req, cb){
+            cb(false);
+          });
+      
+          window.fetch(authRequiredResponseUrl, {method: "GET"})
+            .then(res => {
+              expect(res.status).to.be(401);
+              done();
+            })
+            .catch(e => {
+              throw e;
+            });
+        });
+        it("ignores Exception in request callback in proxy", function(done){
+          fetchXhrHook.onRequest(function(req, cb){
+            throw new Error("error");
+          });
+      
+          fetchXhrHook.onRequest(function(req, cb){
+            cb({
+              status: 200,
+              statusText: "OK",
+            });
+          });
+      
+          window.fetch(authRequiredResponseUrl, {method: "GET"})
+            .then(res => {
+              expect(res.status).to.be(200);
+              done();
+            })
+            .catch(e => {
+              throw e;
+            });
+        });
+      });
+      describe("hook response", function(){
+        it("replace failed 401 response to 200 response", function(done){
+          fetchXhrHook.onResponse(function(req, res){
+            res.status = 200;
+            res.statusText = "OK";
+            res.body = "it's dummy but it's OK";
+          });
+      
+          window.fetch(authRequiredResponseUrl, {method: "GET"})
+            .then(res => {
+              expect(res.status).to.be(200);
+              return res.text();
+            })
+            .then(text => {
+              expect(text).to.be("it's dummy but it's OK");
+              done();
+            })
+            .catch(e => {
+              throw e;
+            });
+        });
+        describe("ResponseProxy", function(){
+          it("can produce error response", function(done){
             fetchXhrHook.onResponse(function(req, res){
               res.status = 200;
               res.statusText = "OK";
-              res.body = "it's dummy but it's OK";
+              res.body = "ABC";
             });
   
             window.fetch(authRequiredResponseUrl, {method: "GET"})
               .then(res => {
                 expect(res.status).to.be(200);
-                return res.text();
+                var errorResponse = res.constructor.error();
+                expect(errorResponse instanceof Response).to.be(true);
+                expect(errorResponse.type).to.be("error");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+          it("can produce redirected response", function(done){
+            fetchXhrHook.onResponse(function(req, res){
+              res.status = 200;
+              res.statusText = "OK";
+              res.body = "ABC";
+            });
+    
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(200);
+                var errorResponse = res.constructor.redirect(normalApiResponseUrl, 302);
+                expect(errorResponse instanceof Response).to.be(true);
+                expect(errorResponse.status).to.be(302);
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+          it("can turn data to arrayBuffer", function(done){
+            fetchXhrHook.onResponse(function(req, res){
+              res.status = 200;
+              res.statusText = "OK";
+              res.body = "ABC";
+            });
+  
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(200);
+                return res.arrayBuffer();
+              })
+              .then(ab => {
+                var data = new Uint8Array(ab);
+                expect(data).to.have.length(3);
+                expect(String.fromCharCode(data[0])).to.be("A");
+                expect(String.fromCharCode(data[1])).to.be("B");
+                expect(String.fromCharCode(data[2])).to.be("C");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+          it("can turn data to blob", function(done){
+            fetchXhrHook.onResponse(function(req, res){
+              res.status = 200;
+              res.statusText = "OK";
+              res.body = "ABC";
+            });
+    
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(200);
+                return res.clone().blob();
+              })
+              .then(blob => {
+                expect(blob instanceof Blob).to.be(true);
+                return blob.text();
               })
               .then(text => {
-                expect(text).to.be("it's dummy but it's OK");
+                expect(text).to.be("ABC");
+                done();
+              })
+              .catch(e => {
+                throw e;
+              });
+          });
+          it("can turn data to formData", function(done){
+            fetchXhrHook.onResponse(function(req, res){
+              res.status = 200;
+              res.statusText = "OK";
+              var fd = new FormData();
+              fd.append("key", "value");
+              res.body = fd;
+            });
+    
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(res => {
+                expect(res.status).to.be(200);
+                return res.formData();
+              })
+              .then(formData => {
+                expect(formData instanceof FormData).to.be(true);
+                expect(formData.get("key")).to.be("value");
                 done();
               })
               .catch(e => {
@@ -1076,73 +1281,73 @@ describe("fetch-xhr-hook", function(){
               });
           });
         });
-        describe("hook response with response callback", function(){
-          it("replace failed 401 response to 200 response after waiting seconds", function(done){
-            this.timeout(10000);
-        
-            fetchXhrHook.onResponse(function(req, res, cb){
-              window.setTimeout(function(){
-                cb({
-                  ...res,
-                  status: 200,
-                  statusText: "OK",
-                  body: "it's dummy but it's OK",
-                });
-              }, 3001);
-            });
-        
-            var start = Date.now();
-  
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(200);
-                expect(Date.now() - start).to.be.greaterThan(3000);
-                return res.text();
-              })
-              .then(text => {
-                expect(text).to.be("it's dummy but it's OK");
-                done();
-              })
-              .catch(e => {
-                throw e;
-              });
-          });
-          it("ignores Exception in response callback in proxy", function(done){
-            fetchXhrHook.onResponse(function(req, res, cb){
-              throw new Error("error");
-            });
-        
-            fetchXhrHook.onResponse(function(req, res, cb){
+      });
+      describe("hook response with response callback", function(){
+        it("replace failed 401 response to 200 response after waiting seconds", function(done){
+          this.timeout(10000);
+      
+          fetchXhrHook.onResponse(function(req, res, cb){
+            window.setTimeout(function(){
               cb({
                 ...res,
                 status: 200,
                 statusText: "OK",
+                body: "it's dummy but it's OK",
               });
-            });
-  
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(200);
-                done();
-              })
-              .catch(e => {
-                throw e;
-              });
+            }, 3001);
           });
-          it("does not return fake response when response object is not supplied to callback function", function(done){
-            fetchXhrHook.onResponse(function(req, res, cb){
-              cb(false);
+      
+          var start = Date.now();
+      
+          window.fetch(authRequiredResponseUrl, {method: "GET"})
+            .then(res => {
+              expect(res.status).to.be(200);
+              expect(Date.now() - start).to.be.greaterThan(3000);
+              return res.text();
+            })
+            .then(text => {
+              expect(text).to.be("it's dummy but it's OK");
+              done();
+            })
+            .catch(e => {
+              throw e;
             });
-  
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(401);
-                done();
-              })
-              .catch(e => {
-                throw e;
-              });
+        });
+        it("ignores Exception in response callback in proxy", function(done){
+          fetchXhrHook.onResponse(function(req, res, cb){
+            throw new Error("error");
           });
+      
+          fetchXhrHook.onResponse(function(req, res, cb){
+            cb({
+              ...res,
+              status: 200,
+              statusText: "OK",
+            });
+          });
+      
+          window.fetch(authRequiredResponseUrl, {method: "GET"})
+            .then(res => {
+              expect(res.status).to.be(200);
+              done();
+            })
+            .catch(e => {
+              throw e;
+            });
+        });
+        it("does not return fake response when response object is not supplied to callback function", function(done){
+          fetchXhrHook.onResponse(function(req, res, cb){
+            cb(false);
+          });
+      
+          window.fetch(authRequiredResponseUrl, {method: "GET"})
+            .then(res => {
+              expect(res.status).to.be(401);
+              done();
+            })
+            .catch(e => {
+              throw e;
+            });
         });
       });
     });
