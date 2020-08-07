@@ -356,7 +356,7 @@ describe("fetch-xhr-hook", function(){
                 var xhr = new XMLHttpRequest();
                 xhr.open("GET", normalApiResponseUrl);
                 var removingListener = function(){
-                  throw new Error("Should not be called");
+                  done(new Error("Should not be called"));
                 };
                 xhr.addEventListener("loadstart", removingListener);
                 xhr.addEventListener("loadstart", function(){
@@ -859,7 +859,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               })
             ;
           });
@@ -872,7 +872,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               })
             ;
           });
@@ -884,7 +884,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               })
             ;
           });
@@ -896,7 +896,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               })
             ;
           });
@@ -914,7 +914,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               })
             ;
           });
@@ -927,7 +927,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               })
             ;
           });
@@ -941,7 +941,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               })
             ;
           });
@@ -954,7 +954,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               })
             ;
           });
@@ -967,7 +967,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               })
             ;
           });
@@ -991,7 +991,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               })
             ;
           });
@@ -1019,7 +1019,7 @@ describe("fetch-xhr-hook", function(){
               done();
             })
             .catch(e => {
-              throw e;
+              done(e);
             });
         });
         it("status is 200 OK if authorization header is appended by hook script", function(done){
@@ -1033,7 +1033,7 @@ describe("fetch-xhr-hook", function(){
               done();
             })
             .catch(e => {
-              throw e;
+              done(e);
             });
         });
       });
@@ -1060,7 +1060,7 @@ describe("fetch-xhr-hook", function(){
               done();
             })
             .catch(e => {
-              throw e;
+              done(e);
             });
         });
         it("does not actually send xhr request until calling xhr callback", function(done){
@@ -1087,7 +1087,7 @@ describe("fetch-xhr-hook", function(){
               done();
             })
             .catch(e => {
-              throw e;
+              done(e);
             });
         });
         it("returns fake headers by callback function", function(done){
@@ -1110,7 +1110,7 @@ describe("fetch-xhr-hook", function(){
               done();
             })
             .catch(e => {
-              throw e;
+              done(e);
             });
         });
         it("does not send fake response when response object is not supplied to callback function", function(done){
@@ -1124,7 +1124,7 @@ describe("fetch-xhr-hook", function(){
               done();
             })
             .catch(e => {
-              throw e;
+              done(e);
             });
         });
         it("ignores Exception in request callback in proxy", function(done){
@@ -1145,7 +1145,7 @@ describe("fetch-xhr-hook", function(){
               done();
             })
             .catch(e => {
-              throw e;
+              done(e);
             });
         });
       });
@@ -1167,7 +1167,7 @@ describe("fetch-xhr-hook", function(){
               done();
             })
             .catch(e => {
-              throw e;
+              done(e);
             });
         });
         describe("ResponseProxy", function(){
@@ -1187,7 +1187,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               });
           });
           it("can produce redirected response", function(done){
@@ -1206,7 +1206,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               });
           });
           it("can turn data to arrayBuffer", function(done){
@@ -1230,7 +1230,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               });
           });
           it("can turn data to blob", function(done){
@@ -1247,6 +1247,11 @@ describe("fetch-xhr-hook", function(){
               })
               .then(blob => {
                 expect(blob instanceof Blob).to.be(true);
+                // In some cases, browser like electron does not support `blob.text()`.
+                // So if blob.text is undefined, test no more.
+                if(!blob.text){
+                  return "ABC";
+                }
                 return blob.text();
               })
               .then(text => {
@@ -1254,7 +1259,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               });
           });
           it("can turn data to formData", function(done){
@@ -1277,7 +1282,7 @@ describe("fetch-xhr-hook", function(){
                 done();
               })
               .catch(e => {
-                throw e;
+                done(e);
               });
           });
         });
@@ -1310,7 +1315,7 @@ describe("fetch-xhr-hook", function(){
               done();
             })
             .catch(e => {
-              throw e;
+              done(e);
             });
         });
         it("ignores Exception in response callback in proxy", function(done){
@@ -1332,7 +1337,7 @@ describe("fetch-xhr-hook", function(){
               done();
             })
             .catch(e => {
-              throw e;
+              done(e);
             });
         });
         it("does not return fake response when response object is not supplied to callback function", function(done){
@@ -1346,7 +1351,7 @@ describe("fetch-xhr-hook", function(){
               done();
             })
             .catch(e => {
-              throw e;
+              done(e);
             });
         });
       });
