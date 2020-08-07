@@ -11,7 +11,7 @@
     "build:ie9": "webpack --config webpack.dev.es5.js && yarn instrument",
     "build:ie9:prod": "webpack --config webpack.prod.es5.js",
     "coverage": "nyc instrument ./dist ./test/dist && node ./test/index.js && yarn coverage:report",
-    "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./test/coverage --report-dir ./test/coverage",
+    "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./docs/coverage --report-dir ./docs/coverage",
     "instrument": "nyc instrument ./dist ./test/dist"
   },
   "devDependencies": {

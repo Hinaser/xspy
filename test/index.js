@@ -22,7 +22,12 @@ nightmare
   .evaluate(() => window.__coverage__)
   .end()
   .then(coverage => {
-    const pathToCoverage = path.join(__dirname, "coverage", "coverage.json");
+    const folderPath = path.join(__dirname, "..", "docs", "coverage");
+    const pathToCoverage = path.join(folderPath, "coverage.json");
+    if(!fs.existsSync(folderPath)){
+      fs.mkdirSync(folderPath, {recursive: true});
+    }
+    
     let data = JSON.stringify(coverage);
   
     /**
