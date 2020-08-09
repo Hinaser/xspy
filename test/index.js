@@ -34,7 +34,8 @@ nightmare
      * Since source map path will be /dist:webpack:///./src/.... which cannot be reached,
      * modify correct src path as below.
      */
-    data = data.replace(/webpack:\/\/\/.\/src\//g, "../src/");
+    // data = data.replace(/webpack:\/\/\/.\/src\//g, "../src/");
+    data = data.replace(/webpack:\/\/fetchXhrHook\/.\/src\//g, "../src/");
     
     return new Promise((resolve, reject) => {
       const callback = (err) => {

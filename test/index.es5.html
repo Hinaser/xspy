@@ -9,6 +9,26 @@
 <body>
 <div id="mocha"></div>
 
+<script>
+  var userAgent = typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent : "";
+  
+  // If browser is not IE, IEVersion will be NaN
+  var IEVersion = (function(){
+    var version = parseInt((/msie (\d+)/.exec(userAgent.toLowerCase()) || [])[1], 10);
+    if (isNaN(version)) {
+      version = parseInt((/trident\/.*; rv:(\d+)/.exec(userAgent.toLowerCase()) || [])[1], 10);
+      if(isNaN(version)){
+        return false;
+      }
+      return version;
+    }
+    return version;
+  })();
+
+  if(IEVersion !== false && IEVersion <= 10 && typeof Uint8Array === "undefined"){
+    window.Uint8Array = Array;
+  }
+</script>
 <script src="/node_modules/mocha/mocha.js"></script>
 <script src="/node_modules/expect.js/index.js"></script>
 
@@ -18,7 +38,7 @@
   });
   // mocha.checkLeaks();
 </script>
-<script src="/test/dist/fetch-xhr-hook.js"></script>
+<script src="/test/dist/fetch-xhr-hook.es5.js"></script>
 <script src="/test.config.js"></script>
 <script src="/test/specs/xhr.test.js"></script>
 <script class="mocha-exec">

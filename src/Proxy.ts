@@ -8,16 +8,28 @@ export class Proxy {
   private static _customXHR = window.XMLHttpRequest;
   private static _customFetch = window.fetch;
   public static readonly OriginalXHR = window.XMLHttpRequest;
-  public static readonly OriginalFetch = window.fetch.bind(window);
+  /* Only IE does not implement `window.fetch`. Exclude from coverage counting. */
+  /* istanbul ignore next */
+  public static readonly OriginalFetch = (window.fetch || function fetch(){ return; }).bind(window);
   
   public static enable() {
     window.XMLHttpRequest = Proxy._customXHR;
-    window.fetch = Proxy._customFetch;
+    /* istanbul ignore else */
+    if(window.fetch){
+      window.fetch = Proxy._customFetch;
+    }
   }
   
   public static disable() {
     window.XMLHttpRequest = Proxy.OriginalXHR;
-    window.fetch = Proxy.OriginalFetch;
+    /* istanbul ignore else */
+    if(window.fetch && Proxy.OriginalFetch){
+      window.fetch = Proxy.OriginalFetch;
+    }
+  }
+  
+  public static isEnabled(){
+    return window.XMLHttpRequest === Proxy._customXHR;
   }
   
   public static setXMLHttpRequest(m: typeof window["XMLHttpRequest"]){

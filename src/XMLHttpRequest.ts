@@ -1,5 +1,5 @@
 import {RequestCallback, ResponseCallback, XhrRequest, XhrResponse} from "./index.type";
-import {createEvent, makeProgressEvent, toHeaderMap, toHeaderString} from "./index.lib";
+import {createEvent, makeProgressEvent, toHeaderMap, toHeaderString, isIE} from "./index.lib";
 import {Proxy} from "./Proxy";
 
 export class XHRProxy implements XMLHttpRequest {
@@ -23,6 +23,8 @@ export class XHRProxy implements XMLHttpRequest {
   private _transitioning: boolean|null = null;
   private _request: XhrRequest = XHRProxy._createRequest(this._xhr);
   private _response: XhrResponse = XHRProxy._createResponse();
+  private _responseText: string = "";
+  private _responseXML: Document | null = null;
   
   public readyState = 0;
   public status = 0;
@@ -30,11 +32,33 @@ export class XHRProxy implements XMLHttpRequest {
   public timeout: number = 0;
   public readonly upload = this._xhr.upload;
   
-  public response: BodyInit|Document|null = "";
-  public responseText: string = "";
+  public response: BodyInit|Document|null|undefined = "";
   public responseType: XMLHttpRequestResponseType = "";
   public responseURL: string = "";
-  public responseXML: Document | null = null;
+  public get responseText(): string {
+    if(this.responseType === "text" || this.responseType === ""){
+      return this._responseText;
+    }
+    /* istanbul ignore next */
+    else if(isIE(">=", 10)){
+      return this._responseText;
+    }
+    const e = new Error("responseText is only available if responseType is '' or 'text'.");
+    e.name = "InvalidStateError";
+    throw e;
+  }
+  public get responseXML(): Document | null {
+    if(this.responseType === "document" || this.responseType === ""){
+      return this._responseXML;
+    }
+    /* istanbul ignore next */
+    else if(isIE(">=", 10)){
+      return this._responseXML;
+    }
+    const e = new Error("responseXML is only available if responseType is '' or 'document'.");
+    e.name = "InvalidStateError";
+    throw e;
+  }
   public withCredentials: boolean = false;
   
   public onreadystatechange: ((this: XMLHttpRequest, ev: Event) => unknown) | null = null;
@@ -74,7 +98,14 @@ export class XHRProxy implements XMLHttpRequest {
       const realReadyState = this._xhr.readyState;
       
       if(realReadyState === this.HEADERS_RECEIVED){
-        this._loadHeaderFromXHRToVirtualResponse();
+        /* istanbul ignore if */
+        if(isIE("<=", 9) && /* istanbul ignore next */ this._request.async === false){
+          // For synchronous request in IE <= 9, it throws Error when accessing xhr header if readyState is less than LOADING.
+          // this._loadHeaderFromXHRToVirtualResponse();
+        }
+        else{
+          this._loadHeaderFromXHRToVirtualResponse();
+        }
       }
       else if(realReadyState === this.LOADING){
         this._loadHeaderFromXHRToVirtualResponse();
@@ -110,7 +141,7 @@ export class XHRProxy implements XMLHttpRequest {
       return;
     }
     
-    const index = this._listeners[type].findIndex(l => l === listener);
+    const index = this._listeners[type].indexOf(listener);
     if(index < 0){
       return;
     }
@@ -119,6 +150,10 @@ export class XHRProxy implements XMLHttpRequest {
   }
   
   public dispatchEvent(event: Event|ProgressEvent<XMLHttpRequestEventTarget>){
+    if(typeof event !== "object"){
+      throw new TypeError("EventTarget.dispatchEvent: Argument 1 is not an object");
+    }
+    
     const onHandlerPropName = "on" + event.type;
     if(onHandlerPropName === "onabort"
       || onHandlerPropName === "onerror"
@@ -224,15 +259,11 @@ export class XHRProxy implements XMLHttpRequest {
       this.dispatchEvent(makeProgressEvent("loadstart", 0));
     
       const headerMap = this._request.headers;
-      for(const headerName in headerMap){
-        if(!Object.prototype.hasOwnProperty.call(headerMap, headerName)){
-          continue;
-        }
-      
+      const headerNames = headerMap ? Object.keys(headerMap) : [];
+      for(let i=0;i<headerNames.length;i++){
+        const headerName = headerNames[i];
         const headerValue = headerMap[headerName];
-        if(headerValue){
-          this._xhr.setRequestHeader(headerName, headerValue);
-        }
+        this._xhr.setRequestHeader(headerName, headerValue);
       }
     
       this._xhr.send(this._request.body);
@@ -299,6 +330,14 @@ export class XHRProxy implements XMLHttpRequest {
   public getResponseHeader(name: string): string | null {
     const lowerHeaderName = name.toLowerCase();
     if(this.readyState < this.HEADERS_RECEIVED || !(lowerHeaderName in this._response.headers)){
+      // IE <= 9 throws Error when readyState is UNSENT
+      /* istanbul ignore next */
+      if(isIE("<=", 9)){
+        if(this.readyState < this.OPENED){
+          throw new Error();
+        }
+        return "";
+      }
       return null;
     }
     return this._response.headers[lowerHeaderName];
@@ -310,6 +349,12 @@ export class XHRProxy implements XMLHttpRequest {
       // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getAllResponseHeaders
       // But lib.dom.d.ts asserts it always returns string.
       // Don't know which is correct.
+      
+      // IE <= 9 throws Error when readyState is UNSENT
+      /* istanbul ignore next */
+      if(isIE("<=", 9) && this.readyState < this.OPENED){
+        throw new Error();
+      }
       return "";
     }
     return toHeaderString(this._response.headers);
@@ -515,16 +560,16 @@ export class XHRProxy implements XMLHttpRequest {
   
   private _syncBodyFromVirtualResponse(){
     if("responseText" in this._response){
-      this.responseText = this._response.responseText || "";
+      this._responseText = this._response.responseText || "";
     }
     if("responseXML" in this._response){
-      this.responseXML = this._response.responseXML || null;
+      this._responseXML = this._response.responseXML || null;
     }
     if("body" in this._response){
       this.response = this._response.body || null;
     }
     if("response" in this._response){
-      this.response = this._response.response || null;
+      this.response = this._response.response;
     }
     if("responseURL" in this._response){
       this.responseURL = this._response.responseURL || "";

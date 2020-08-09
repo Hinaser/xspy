@@ -7,6 +7,6 @@ webpackConfig.module.rules.forEach((rule) => {
   }
 });
 
-webpackConfig.output.filename = "fetch-xhr-hook.ie9.min.js";
+webpackConfig.output.filename = "fetch-xhr-hook.es5.min.js";
 
 module.exports = webpackConfig;

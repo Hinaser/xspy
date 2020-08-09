@@ -8,18 +8,37 @@ var postUrl = baseApiUrl + testConfig.path.api.post;
 
 var userAgent = typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent : "";
 
-// If browser is not IE, IEVersion will be NaN
+// If browser is not IE, IEVersion will be false
 var IEVersion = (function(){
   var version = parseInt((/msie (\d+)/.exec(userAgent.toLowerCase()) || [])[1], 10);
   if (isNaN(version)) {
-    return parseInt((/trident\/.*; rv:(\d+)/.exec(userAgent.toLowerCase()) || [])[1], 10);
+    version = parseInt((/trident\/.*; rv:(\d+)/.exec(userAgent.toLowerCase()) || [])[1], 10);
+    if(isNaN(version)){
+      return false;
+    }
+    return version;
   }
   return version;
 })();
 
+function isIE(op, version){
+  if(IEVersion === false) return false;
+  else if(!version) return true;
+  else if(op === "<") return IEVersion < version;
+  else if(op === "<=") return IEVersion <= version;
+  else if(op === ">") return IEVersion > version;
+  else if(op === ">=") return IEVersion >= version;
+  else if(op === "=") return IEVersion === version;
+  return IEVersion === version;
+}
+
 
 describe("fetch-xhr-hook", function(){
   describe("fetchXhrHook", function(){
+    it("returns true if hook is applied", function(){
+      fetchXhrHook.enable();
+      expect(fetchXhrHook.isEnabled()).to.be(true);
+    });
     it("returns empty array if onRequest is not called", function(){
       expect(fetchXhrHook.getRequestListeners()).to.have.length(0);
     });
@@ -161,12 +180,44 @@ describe("fetch-xhr-hook", function(){
             });
             it("getAllResponseHeaders returns empty string. (MDN says it should return null by the way...)", function(){
               var xhr = new XMLHttpRequest();
-              expect(xhr.getAllResponseHeaders()).to.empty();
+              if(!isIE() || isIE(">=", 10)){
+                expect(xhr.getAllResponseHeaders()).to.empty();
+              }
+              // IEVersion <= 9
+              else{
+                expect(function(){ xhr.getAllResponseHeaders() }).to.throwError();
+              }
             });
             it("getResponseHeader returns null", function(){
               var xhr = new XMLHttpRequest();
-              expect(xhr.getResponseHeader("content-type")).to.be(null);
+              if(!isIE() || isIE(">=", 10)){
+                expect(xhr.getResponseHeader("content-type")).to.be(null);
+              }
+              // IEVersion <= 9
+              else{
+                expect(function(){ xhr.getResponseHeader("content-type") }).to.throwError();
+              }
             });
+            it("throws TypeError when calling `dispatchEvent` with non-object argument", function(){
+              var xhr = new XMLHttpRequest();
+              expect(function(){
+                xhr.dispatchEvent("unknown event aaa");
+              }).to.throwError();
+            });
+            if(!isIE()){
+              it("does nothing when calling `dispatchEvent` with unknown event", function(){
+                var xhr = new XMLHttpRequest();
+                expect(function(){
+                  ev = new Event("unknown event aaa");
+                  xhr.dispatchEvent(ev);
+                }).not.to.throwError();
+              });
+            }
+            else{
+              it("does nothing when calling `dispatchEvent` with unknown event. (Skipping as IE does not support custom event)", function(){
+                this.skip();
+              });
+            }
           });
           
           describe("on open", function(){
@@ -195,51 +246,114 @@ describe("fetch-xhr-hook", function(){
           });
           
           describe("on sent", function(){
-            it("should throw an Error on sent if it is not yet OPENED", function(){
-              var xhr = new XMLHttpRequest();
-              expect(function(){xhr.send()}).to.throwError();
-            });
-            it("onreadystatechange event is triggered in order", function(done){
-              var xhr = new XMLHttpRequest();
-              xhr.open("GET", normalApiResponseUrl);
-              var expectedReadyState = XMLHttpRequest.HEADERS_RECEIVED;
-              xhr.onreadystatechange = function(){
-                expect(this.readyState).to.be(expectedReadyState++);
-                if(this.readyState === XMLHttpRequest.DONE){
-                  done();
-                }
-              };
-              xhr.send();
-            });
-            it("synchronously gets response when async option is set to false", function(){
-              var xhr = new XMLHttpRequest();
-              xhr.open("GET", normalApiResponseUrl, false);
-              xhr.send();
-              expect(xhr.status).to.be(200);
-            });
-            it("can post and receive json object", function(done){
-              var xhr = new XMLHttpRequest();
-              xhr.open("POST", postUrl);
-              var body = JSON.stringify({test: 1});
-              xhr.setRequestHeader("content-type", "application/json");
-              xhr.responseType = "json";
-              xhr.addEventListener("load", function(){
-                expect(this.status).to.be(200);
-                expect(this.response).to.have.property("test");
-                expect(this.response.test).to.be(true);
-                done();
+            describe("general", function(){
+              it("should throw an Error on sent if it is not yet OPENED", function(){
+                var xhr = new XMLHttpRequest();
+                expect(function(){xhr.send()}).to.throwError();
               });
-              xhr.send(body);
+              it("onreadystatechange event is triggered in order", function(done){
+                var xhr = new XMLHttpRequest();
+                var expectedReadyState;
+                var xhrOpenCalled = false;
+    
+                expectedReadyState = XMLHttpRequest.OPENED;
+                xhr.onreadystatechange = function(){
+                  try{
+                    if(!isIE()){
+                      expect(this.readyState).to.be(expectedReadyState++);
+                    }
+                      // When IE, it seems xhr.onreadystatechange() will be called twice with readyState = "OPENED".
+                    // First after xhr.open() is executed, second xhr.send() is executed.
+                    else if(!fetchXhrHook.isEnabled()){
+                      expect(this.readyState).to.be(expectedReadyState++);
+                      if(!xhrOpenCalled){
+                        expectedReadyState--;
+                      }
+                    }
+                    if(this.readyState === XMLHttpRequest.DONE){
+                      done();
+                    }
+                  }
+                  catch(e){
+                    done(e);
+                  }
+                };
+                xhr.open("GET", normalApiResponseUrl);
+                xhrOpenCalled = true;
+                xhr.send();
+              });
+              it("synchronously gets response when async option is set to false", function(){
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", normalApiResponseUrl, false);
+                xhr.send();
+                expect(xhr.status).to.be(200);
+              });
+              it("can post and receive json object", function(done){
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", postUrl);
+                var body = JSON.stringify({test: 1});
+                xhr.setRequestHeader("content-type", "application/json");
+                xhr.responseType = "json";
+                xhr.addEventListener("load", function(){
+                  try{
+                    expect(this.status).to.be(200);
+                    // IE does not support responseType:json
+                    if(!isIE()){
+                      expect(this.response).to.have.property("test");
+                      expect(this.response.test).to.be(true);
+                    }
+                    else if(isIE(">=", 10)){
+                      expect(this.response).to.be("{\"test\":true}");
+                      expect(this.responseText).to.be("{\"test\":true}");
+                    }
+                    // IE <= 9 does not support responseType at all.
+                    else{
+                      expect(this.response).to.be(undefined);
+                    }
+                    done();
+                  }
+                  catch(e){
+                    done(e);
+                  }
+                });
+                xhr.send(body);
+              });
             });
             describe("responseType", function(){
+              if(isIE("<=", 9)){
+                it("IE <= 9 does not support responseType at all. Skipping.", function(){
+                  this.skip();
+                });
+                return;
+              }
+              
               it("returns json response when responseType is set to 'json'", function(done){
                 var xhr = new XMLHttpRequest();
                 xhr.open("GET", normalApiResponseUrl);
                 xhr.responseType = "json";
                 xhr.onreadystatechange = function(){
                   if(this.readyState === XMLHttpRequest.DONE){
-                    expect(this.response).to.have.property("result");
-                    done();
+                    try{
+                      // IE does not support responseType:json so only test below if browser is not IE.
+                      if(!isIE()){
+                        expect(this.response).to.have.property("result");
+                        expect(function(){
+                          var test = this.responseText; // expected to throw InvalidStateError
+                        }.bind(this)).to.throwError();
+                        expect(function(){
+                          var test = this.responseXML; // expected to throw InvalidStateError
+                        }.bind(this)).to.throwError();
+                      }
+                      // IE >= 10
+                      else{
+                        expect(this.response).to.be("{\"result\":\"normal\"}");
+                        expect(this.responseText).to.be("{\"result\":\"normal\"}");
+                      }
+                      done();
+                    }
+                    catch(e){
+                      done(e);
+                    }
                   }
                 };
                 xhr.send();
@@ -251,6 +365,7 @@ describe("fetch-xhr-hook", function(){
                 xhr.onreadystatechange = function(){
                   if(this.readyState === XMLHttpRequest.DONE){
                     expect(this.response).to.be("{\"result\":\"normal\"}");
+                    expect(this.responseText).to.be("{\"result\":\"normal\"}");
                     done();
                   }
                 };
@@ -262,8 +377,14 @@ describe("fetch-xhr-hook", function(){
                 xhr.responseType = "document";
                 xhr.onreadystatechange = function(){
                   if(this.readyState === XMLHttpRequest.DONE){
-                    expect(this.response instanceof XMLDocument).to.be(true);
-                    expect(this.responseXML instanceof XMLDocument).to.be(true);
+                    if(isIE("<=", 10)){
+                      expect(this.response instanceof Document).to.be(true);
+                      expect(this.responseXML instanceof Document).to.be(true);
+                    }
+                    else{
+                      expect(this.response instanceof XMLDocument).to.be(true);
+                      expect(this.responseXML instanceof XMLDocument).to.be(true);
+                    }
                     done();
                   }
                 };
@@ -286,22 +407,33 @@ describe("fetch-xhr-hook", function(){
               });
             });
             describe("event listeners", function(){
-              it("should fire onloadstart event listener", function(done){
-                var xhr = new XMLHttpRequest();
-                xhr.open("GET", normalApiResponseUrl);
-                xhr.addEventListener("loadstart", function(){
-                  done();
+              // IE <= 9 does not support `loadstart` event.
+              if(isIE("<=", 9)){
+                it("should fire onloadstart event listener. (Skipping as IE <= 9 does not support loadstart event)", function(done){
+                  this.skip();
                 });
-                xhr.send();
-              });
-              it("should fire onloadstart function", function(done){
-                var xhr = new XMLHttpRequest();
-                xhr.open("GET", normalApiResponseUrl);
-                xhr.onloadstart = function(){
-                  done();
-                }
-                xhr.send();
-              });
+                it("should fire onloadstart function. (Skipping as IE <= 9 does not support loadstart event)", function(done){
+                  this.skip();
+                });
+              }
+              else{
+                it("should fire onloadstart event listener", function(done){
+                  var xhr = new XMLHttpRequest();
+                  xhr.open("GET", normalApiResponseUrl);
+                  xhr.addEventListener("loadstart", function(){
+                    done();
+                  });
+                  xhr.send();
+                });
+                it("should fire onloadstart function", function(done){
+                  var xhr = new XMLHttpRequest();
+                  xhr.open("GET", normalApiResponseUrl);
+                  xhr.onloadstart = function(){
+                    done();
+                  }
+                  xhr.send();
+                });
+              }
               it("should fire onload event listener", function(done){
                 var xhr = new XMLHttpRequest();
                 xhr.open("GET", normalApiResponseUrl);
@@ -318,33 +450,43 @@ describe("fetch-xhr-hook", function(){
                 }
                 xhr.send();
               });
-              it("should fire onloadend event listener", function(done){
-                var xhr = new XMLHttpRequest();
-                xhr.open("GET", normalApiResponseUrl);
-                xhr.addEventListener("loadend", function(){
-                  done();
+              if(isIE("<=", 9)){
+                it("should fire onloadend event listener. (Skipping as IE <= 9 does not support loadend event)", function(){
+                  this.skip();
                 });
-                xhr.send();
-              });
-              it("should fire onloadend function", function(done){
-                var xhr = new XMLHttpRequest();
-                xhr.open("GET", normalApiResponseUrl);
-                xhr.onloadend = function(){
-                  done();
-                }
-                xhr.send();
-              });
-              it("should fire multiple onloadend event listener", function(done){
+                it("should fire onloadend function. (Skipping as IE <= 9 does not support loadend event)", function(){
+                  this.skip();
+                });
+              }
+              else{
+                it("should fire onloadend event listener", function(done){
+                  var xhr = new XMLHttpRequest();
+                  xhr.open("GET", normalApiResponseUrl);
+                  xhr.addEventListener("loadend", function(){
+                    done();
+                  });
+                  xhr.send();
+                });
+                it("should fire onloadend function", function(done){
+                  var xhr = new XMLHttpRequest();
+                  xhr.open("GET", normalApiResponseUrl);
+                  xhr.onloadend = function(){
+                    done();
+                  }
+                  xhr.send();
+                });
+              }
+              it("should fire multiple onload event listener", function(done){
                 var xhr = new XMLHttpRequest();
                 xhr.open("GET", normalApiResponseUrl);
                 var counter = 0;
-                xhr.addEventListener("loadend", function(){
+                xhr.addEventListener("load", function(){
                   counter++;
                   if(counter > 1){
                     done();
                   }
                 });
-                xhr.addEventListener("loadend", function(){
+                xhr.addEventListener("load", function(){
                   counter++;
                   if(counter > 1){
                     done();
@@ -352,23 +494,23 @@ describe("fetch-xhr-hook", function(){
                 });
                 xhr.send();
               });
-              it("should not fire removed onloadend event listener", function(done){
+              it("should not fire removed onload event listener", function(done){
                 var xhr = new XMLHttpRequest();
                 xhr.open("GET", normalApiResponseUrl);
                 var removingListener = function(){
                   done(new Error("Should not be called"));
                 };
-                xhr.addEventListener("loadstart", removingListener);
-                xhr.addEventListener("loadstart", function(){
+                xhr.addEventListener("load", removingListener);
+                xhr.addEventListener("load", function(){
                   done();
                 });
-                xhr.removeEventListener("loadstart", removingListener);
+                xhr.removeEventListener("load", removingListener);
                 xhr.send();
               });
               it("does nothing when removing unregistered event listener", function(){
                 var xhr = new XMLHttpRequest();
                 xhr.open("GET", normalApiResponseUrl);
-                xhr.removeEventListener("loadstart", function(){
+                xhr.removeEventListener("load", function(){
                   throw new Error("Never be called");
                 });
                 xhr.send();
@@ -376,8 +518,8 @@ describe("fetch-xhr-hook", function(){
               it("does nothing when removing unregistered event listener2", function(){
                 var xhr = new XMLHttpRequest();
                 xhr.open("GET", normalApiResponseUrl);
-                xhr.addEventListener("loadstart", function(){});
-                xhr.removeEventListener("loadstart", function(){
+                xhr.addEventListener("load", function(){});
+                xhr.removeEventListener("load", function(){
                   throw new Error("Never be called");
                 });
                 xhr.send();
@@ -411,42 +553,86 @@ describe("fetch-xhr-hook", function(){
                 xhr.open("GET", normalApiResponseUrl);
                 xhr.onreadystatechange = function(){
                   if(this.readyState === XMLHttpRequest.DONE){
-                    expect(this.getResponseHeader("never-existing-header-name")).to.be(null);
-                    done();
+                    try{
+                      if(isIE("<=", 9)){
+                        expect(this.getResponseHeader("never-existing-header-name")).to.empty();
+                      }
+                      else{
+                        expect(this.getResponseHeader("never-existing-header-name")).to.be(null);
+                      }
+                      done();
+                    }
+                    catch(e){
+                      done(e);
+                    }
                   }
                 };
                 xhr.send();
               });
-              it("does not throws error when receiving invalid xml with 'content-type: text/xml' after override mime type", function(){
-                var xhr = new XMLHttpRequest();
-                xhr.open("GET", invalidXMLApiResponseUrl);
-                xhr.overrideMimeType("text/plain");
-                expect(function(){xhr.send()}).not.to.throwError();
-              });
+              if(isIE("<=", 10)){
+                // IE 10 or older does not implement xhr.overrideMimeType();
+                it("does not throws error when receiving invalid xml with 'content-type: text/xml' after override mime type (Skip this because IE <= 10 does not implement overrideMimeType)", function(){
+                  this.skip();
+                });
+              }
+              else{
+                it("does not throws error when receiving invalid xml with 'content-type: text/xml' after override mime type", function(){
+                  var xhr = new XMLHttpRequest();
+                  xhr.open("GET", invalidXMLApiResponseUrl);
+                  xhr.overrideMimeType("text/plain");
+                  expect(function(){xhr.send()}).not.to.throwError();
+                });
+              }
             });
             describe("timeout", function(){
+              if(isIE("<=", 9)){
+                it("ontimeout event listener/function is called. (Skipping as IE <= 9 does not support timeout event)", function(){
+                  this.skip();
+                });
+                return;
+              }
+              
               it("ontimeout event listener is called", function(done){
                 var xhr = new XMLHttpRequest();
-                xhr.timeout = 1000;
+                // When IE, xhr.timeout can be assigned after open() and before send().
+                if(!isIE()){
+                  xhr.timeout = 1000;
+                }
                 xhr.addEventListener("timeout", function(){
                   expect(this.status).to.be(0);
                   done();
                 });
                 xhr.open("GET", timeoutApiResponseUrl);
+                if(isIE()){
+                  xhr.timeout = 1000;
+                }
                 xhr.send();
               });
               it("ontimeout function is called", function(done){
                 var xhr = new XMLHttpRequest();
-                xhr.timeout = 1000;
+                // When IE, xhr.timeout can be assigned after open() and before send().
+                if(!isIE()){
+                  xhr.timeout = 1000;
+                }
                 xhr.ontimeout = function(){
                   expect(this.status).to.be(0);
                   done();
                 };
                 xhr.open("GET", timeoutApiResponseUrl);
+                if(isIE()){
+                  xhr.timeout = 1000;
+                }
                 xhr.send();
               });
             });
             describe("abort", function(){
+              if(isIE("<=", 9)){
+                it("onabort event listener/function is called. (Skipping as IE <= 9 does not support abort event)", function(){
+                  this.skip();
+                });
+                return;
+              }
+  
               it("onabort event listener is called", function(done){
                 var xhr = new XMLHttpRequest();
                 xhr.addEventListener("abort", function(){
@@ -501,14 +687,19 @@ describe("fetch-xhr-hook", function(){
         fetchXhrHook.clearAll();
       });
   
-      describe("Access to url which requires Authorization header", function(){
-        it("status is 403 unauthorized if no authorization header is appended", function(done){
+      describe("hook request", function(){
+        it("status is 401 unauthorized if no authorization header is appended", function(done){
           var xhr = new XMLHttpRequest();
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
             if(this.readyState === xhr.DONE){
-              expect(this.status).to.be(401);
-              done();
+              try{
+                expect(this.status).to.be(401);
+                done();
+              }
+              catch(e){
+                done(e);
+              }
             }
           };
           xhr.send();
@@ -528,8 +719,56 @@ describe("fetch-xhr-hook", function(){
           };
           xhr.send();
         });
+        it("status is 401 if appended valid Authorization header is removed", function(done){
+          fetchXhrHook.onRequest(function(req){
+            req.headers = undefined;
+          });
+  
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.setRequestHeader("Authorization", "test-authorization");
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              try{
+                expect(this.status).to.be(401);
+                done();
+              }
+              catch(e){
+                done(e);
+              }
+            }
+          };
+          xhr.send();
+        });
+        it("status is 200 if valid Authorization header is appended after private _request.header is set to undefined", function(done){
+          fetchXhrHook.onRequest(function(req){
+            req.headers = undefined;
+          });
+          fetchXhrHook.onRequest(function(req){
+            this.setRequestHeader("Authorization", "test-authorization");
+          });
+    
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", authRequiredResponseUrl);
+          xhr.onreadystatechange = function(){
+            if(this.readyState === xhr.DONE){
+              try{
+                expect(this.status).to.be(200);
+                done();
+              }
+              catch(e){
+                done(e);
+              }
+            }
+          };
+          xhr.send();
+        });
       });
       describe("hook request and return fake response", function(){
+        beforeEach(function(){
+          fetchXhrHook.clearAll();
+        });
+  
         it("returns 200 response even if accessing url which requires Authorization header", function(done){
           this.timeout(10000);
       
@@ -579,18 +818,18 @@ describe("fetch-xhr-hook", function(){
               calledFunctions.push("LOADING");
             }
             if(this.readyState === xhr.DONE){
-              expect(calledFunctions.filter(f => f === "HEADERS_RECEIVED")).to.have.length(1);
-              expect(calledFunctions.filter(f => f === "LOADING")).to.have.length(1);
-              expect(calledFunctions.filter(f => f === "onloadstart")).to.have.length(1);
-              expect(calledFunctions.filter(f => f === "onloadstartListener")).to.have.length(1);
+              expect(calledFunctions.filter(function(f){ return f === "HEADERS_RECEIVED"; })).to.have.length(1);
+              expect(calledFunctions.filter(function(f){ return f === "LOADING"; })).to.have.length(1);
+              expect(calledFunctions.filter(function(f){ return f === "onloadstart"; })).to.have.length(1);
+              expect(calledFunctions.filter(function(f){ return f === "onloadstartListener"; })).to.have.length(1);
             }
           };
       
           xhr.addEventListener("loadend", function(){
-            expect(calledFunctions.filter(f => f === "onload")).to.have.length(1);
-            expect(calledFunctions.filter(f => f === "onloadend")).to.have.length(1);
-            expect(calledFunctions.filter(f => f === "onloadListener")).to.have.length(1);
-            expect(calledFunctions.filter(f => f === "onloadendListener")).to.have.length(1);
+            expect(calledFunctions.filter(function(f){ return f === "onload"; })).to.have.length(1);
+            expect(calledFunctions.filter(function(f){ return f === "onloadend"; })).to.have.length(1);
+            expect(calledFunctions.filter(function(f){ return f === "onloadListener"; })).to.have.length(1);
+            expect(calledFunctions.filter(function(f){ return f === "onloadendListener"; })).to.have.length(1);
             done();
           });
       
@@ -636,17 +875,27 @@ describe("fetch-xhr-hook", function(){
           var xhr = new XMLHttpRequest();
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
-            if(this.readyState === xhr.HEADERS_RECEIVED){
-              expect(xhr.getResponseHeader("test-header")).to.be("aaa");
+            try{
+              if(this.readyState === xhr.HEADERS_RECEIVED){
+                expect(xhr.getResponseHeader("test-header")).to.be("aaa");
+              }
+              if(this.readyState === xhr.LOADING){
+                if(isIE("<=", 9)){
+                  expect(xhr.getResponseHeader("test-header")).to.be("");
+                }
+                else{
+                  expect(xhr.getResponseHeader("test-header")).to.be(null);
+                }
+                expect(xhr.getResponseHeader("test-header2")).to.be("bbb");
+              }
+              if(this.readyState === xhr.DONE){
+                expect(xhr.status).to.be(200);
+                expect(this.response).to.be("it's dummy");
+                done();
+              }
             }
-            if(this.readyState === xhr.LOADING){
-              expect(xhr.getResponseHeader("test-header")).to.be(null);
-              expect(xhr.getResponseHeader("test-header2")).to.be("bbb");
-            }
-            if(this.readyState === xhr.DONE){
-              expect(xhr.status).to.be(200);
-              expect(this.response).to.be("it's dummy");
-              done();
+            catch(e){
+              done(e);
             }
           };
           xhr.send();
@@ -668,16 +917,31 @@ describe("fetch-xhr-hook", function(){
           var xhr = new XMLHttpRequest();
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
-            if(this.readyState === xhr.HEADERS_RECEIVED){
-              expect(xhr.getResponseHeader("test-header")).to.be(null);
+            try{
+              if(this.readyState === xhr.HEADERS_RECEIVED){
+                if(isIE("<=", 9)){
+                  expect(xhr.getResponseHeader("test-header")).to.be("");
+                }
+                else{
+                  expect(xhr.getResponseHeader("test-header")).to.be(null);
+                }
+              }
+              if(this.readyState === xhr.LOADING){
+                if(isIE("<=", 9)){
+                  expect(xhr.getResponseHeader("test-header")).to.be("");
+                }
+                else{
+                  expect(xhr.getResponseHeader("test-header")).to.be(null);
+                }
+              }
+              if(this.readyState === xhr.DONE){
+                expect(xhr.status).to.be(200);
+                expect(this.response).to.be("it's dummy");
+                done();
+              }
             }
-            if(this.readyState === xhr.LOADING){
-              expect(xhr.getResponseHeader("test-header")).to.be(null);
-            }
-            if(this.readyState === xhr.DONE){
-              expect(xhr.status).to.be(200);
-              expect(this.response).to.be("it's dummy");
-              done();
+            catch(e){
+              done(e);
             }
           };
           xhr.send();
@@ -714,8 +978,13 @@ describe("fetch-xhr-hook", function(){
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
             if(this.readyState === xhr.DONE){
-              expect(this.status).to.be(401);
-              done();
+              try{
+                expect(this.status).to.be(401);
+                done();
+              }
+              catch(e){
+                done(e);
+              }
             }
           }
           xhr.send();
@@ -771,7 +1040,6 @@ describe("fetch-xhr-hook", function(){
           fetchXhrHook.onResponse(function(req, res, cb){
             window.setTimeout(function(){
               cb({
-                ...res,
                 status: 200,
                 statusText: "OK",
                 response: "it's dummy but it's OK",
@@ -801,7 +1069,6 @@ describe("fetch-xhr-hook", function(){
       
           fetchXhrHook.onResponse(function(req, res, cb){
             cb({
-              ...res,
               status: 200,
               statusText: "OK",
             });
@@ -826,8 +1093,13 @@ describe("fetch-xhr-hook", function(){
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
             if(this.readyState === xhr.DONE){
-              expect(this.status).to.be(401);
-              done();
+              try{
+                expect(this.status).to.be(401);
+                done();
+              }
+              catch(e){
+                done(e);
+              }
             }
           }
           xhr.send();
@@ -835,526 +1107,530 @@ describe("fetch-xhr-hook", function(){
       });
     });
   });
-  describe("fetch-hook", function(){
+  if(!isIE()){
     // Skip fetch test if browser is IE
-    if(!isNaN(IEVersion)){
-      this.skip();
-    }
-    
-    var checkFetchBehavior = function(useHook){
-      describe(useHook ? "hooked fetch (fetchXhrHook enabled)" : "original fetch", function(){
-        before(function(){
-          if(useHook){
-            fetchXhrHook.enable();
-          }
-          else{
-            fetchXhrHook.disable();
-          }
-        });
+    describe("fetch-hook", function(){
+      var checkFetchBehavior = function(useHook){
+        describe(useHook ? "hooked fetch (fetchXhrHook enabled)" : "original fetch", function(){
+          before(function(){
+            if(useHook){
+              fetchXhrHook.enable();
+            }
+            else{
+              fetchXhrHook.disable();
+            }
+          });
         
-        describe("takes first argument as url, second as option", function(){
-          it("does not throw an Error", function(done){
-            window.fetch(normalApiResponseUrl, {method: "GET"})
-              .then(res => {
-                done();
-              })
-              .catch(e => {
-                done(e);
-              })
-            ;
+          describe("takes first argument as url, second as option", function(){
+            it("does not throw an Error", function(done){
+              window.fetch(normalApiResponseUrl, {method: "GET"})
+                .then(function(res){
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                })
+              ;
+            });
+            it("can parse response as json", function(done){
+              window.fetch(normalApiResponseUrl, {method: "GET"})
+                .then(function(res){ return res.json(); })
+                .then(function(json){
+                  expect(json).to.have.property("result");
+                  expect(json.result).to.be("normal");
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                })
+              ;
+            });
+            it("can parse response as text", function(done){
+              window.fetch(normalApiResponseUrl, {method: "GET"})
+                .then(function(res){ return res.text(); })
+                .then(function(text){
+                  expect(text).to.be("{\"result\":\"normal\"}");
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                })
+              ;
+            });
+            it("can send request header", function(done){
+              var headers = {"Authorization": "test-authorization"};
+              window.fetch(authRequiredResponseUrl, {method: "GET", headers: headers})
+                .then(function(res){
+                  expect(res.ok).to.be(true);
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                })
+              ;
+            });
+            it("can post json object in request body", function(done){
+              var headers = {"content-type": "application/json"};
+              var body = JSON.stringify({test: 1});
+              window.fetch(postUrl, {method: "POST", headers: headers, body: body})
+                .then(function(res){
+                  expect(res.ok).to.be(true);
+                  return res.json();
+                })
+                .then(function(json){
+                  expect(json).to.have.property("test");
+                  expect(json.test).to.be(true);
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                })
+              ;
+            });
           });
-          it("can parse response as json", function(done){
-            window.fetch(normalApiResponseUrl, {method: "GET"})
-              .then(res => res.json())
-              .then(json => {
-                expect(json).to.have.property("result");
-                expect(json.result).to.be("normal");
-                done();
-              })
-              .catch(e => {
-                done(e);
-              })
-            ;
-          });
-          it("can parse response as text", function(done){
-            window.fetch(normalApiResponseUrl, {method: "GET"})
-              .then(res => res.text())
-              .then(text => {
-                expect(text).to.be("{\"result\":\"normal\"}");
-                done();
-              })
-              .catch(e => {
-                done(e);
-              })
-            ;
-          });
-          it("can send request header", function(done){
-            var headers = {"Authorization": "test-authorization"};
-            window.fetch(authRequiredResponseUrl, {method: "GET", headers})
-              .then(res => {
-                expect(res.ok).to.be(true);
-                done();
-              })
-              .catch(e => {
-                done(e);
-              })
-            ;
-          });
-          it("can post json object in request body", function(done){
-            var headers = {"content-type": "application/json"};
-            var body = JSON.stringify({test: 1});
-            window.fetch(postUrl, {method: "POST", headers, body})
-              .then(res => {
-                expect(res.ok).to.be(true);
-                return res.json();
-              })
-              .then(json => {
-                expect(json).to.have.property("test");
-                expect(json.test).to.be(true);
-                done();
-              })
-              .catch(e => {
-                done(e);
-              })
-            ;
-          });
-        });
-        describe("takes first argument as Request", function(){
-          it("does not throw an Error", function(done){
-            var req = new Request(normalApiResponseUrl, {method: "GET"});
-            window.fetch(req)
-              .then(res => {
-                done();
-              })
-              .catch(e => {
-                done(e);
-              })
-            ;
-          });
-          it("can parse response as json", function(done){
-            var req = new Request(normalApiResponseUrl, {method: "GET"});
-            window.fetch(req)
-              .then(res => res.json())
-              .then(json => {
-                expect(json).to.have.property("result");
-                expect(json.result).to.be("normal");
-                done();
-              })
-              .catch(e => {
-                done(e);
-              })
-            ;
-          });
-          it("can parse response as text", function(done){
-            var req = new Request(normalApiResponseUrl, {method: "GET"});
-            window.fetch(req)
-              .then(res => res.text())
-              .then(text => {
-                expect(text).to.be("{\"result\":\"normal\"}");
-                done();
-              })
-              .catch(e => {
-                done(e);
-              })
-            ;
-          });
-          it("can send request header", function(done){
-            var headers = {"Authorization": "test-authorization"};
-            var req = new Request(authRequiredResponseUrl, {method: "GET", headers});
-            window.fetch(req)
-              .then(res => {
-                expect(res.ok).to.be(true);
-                done();
-              })
-              .catch(e => {
-                done(e);
-              })
-            ;
-          });
-          it("can post json object in request body (Skipping because major browsers does not support sending body with Request instance for now.)", function(done){
-            // Major browsers does not support sending body with Request object as of 2020/08/06.
-            // https://developer.mozilla.org/en-US/docs/Web/API/Request/Request#bcd:api.Request.Request
-            // So skip this test.
-            this.skip();
+          describe("takes first argument as Request", function(){
+            it("does not throw an Error", function(done){
+              var req = new Request(normalApiResponseUrl, {method: "GET"});
+              window.fetch(req)
+                .then(function(res){
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                })
+              ;
+            });
+            it("can parse response as json", function(done){
+              var req = new Request(normalApiResponseUrl, {method: "GET"});
+              window.fetch(req)
+                .then(function(res){ return res.json(); })
+                .then(function(json){
+                  expect(json).to.have.property("result");
+                  expect(json.result).to.be("normal");
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                })
+              ;
+            });
+            it("can parse response as text", function(done){
+              var req = new Request(normalApiResponseUrl, {method: "GET"});
+              window.fetch(req)
+                .then(function(res){ return res.text(); })
+                .then(function(text){
+                  expect(text).to.be("{\"result\":\"normal\"}");
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                })
+              ;
+            });
+            it("can send request header", function(done){
+              var headers = {"Authorization": "test-authorization"};
+              var req = new Request(authRequiredResponseUrl, {method: "GET", headers: headers});
+              window.fetch(req)
+                .then(function(res){
+                  expect(res.ok).to.be(true);
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                })
+              ;
+            });
+            it("can post json object in request body (Skipping because major browsers does not support sending body with Request instance for now.)", function(done){
+              // Major browsers does not support sending body with Request object as of 2020/08/06.
+              // https://developer.mozilla.org/en-US/docs/Web/API/Request/Request#bcd:api.Request.Request
+              // So skip this test.
+              this.skip();
+              return;
             
-            var headers = {"content-type": "application/json"};
-            var body = JSON.stringify({test: 1});
-            var req = new Request(postUrl, {method: "POST", headers, body});
-            window.fetch(req)
-              .then(res => {
-                expect(res.ok).to.be(true);
-                return res.json();
-              })
-              .then(json => {
-                expect(json).to.have.property("test");
-                expect(json.test).to.be(true);
+              var headers = {"content-type": "application/json"};
+              var body = JSON.stringify({test: 1});
+              var req = new Request(postUrl, {method: "POST", headers: headers, body: body});
+              window.fetch(req)
+                .then(function(res){
+                  expect(res.ok).to.be(true);
+                  return res.json();
+                })
+                .then(function(json){
+                  expect(json).to.have.property("test");
+                  expect(json.test).to.be(true);
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                })
+              ;
+            });
+          });
+        });
+      };
+      checkFetchBehavior(false);
+      checkFetchBehavior(true);
+    
+      describe("with hook", function(){
+        before(function(){
+          fetchXhrHook.clearAll();
+          fetchXhrHook.enable();
+        });
+      
+        beforeEach(function(){
+          fetchXhrHook.clearAll();
+        });
+      
+        describe("Access to url which requires Authorization header", function(){
+          it("status is 403 unauthorized if no authorization header is appended", function(done){
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(function(res){
+                expect(res.status).to.be(401);
                 done();
               })
-              .catch(e => {
+              .catch(function(e){
                 done(e);
+              });
+          });
+          it("status is 200 OK if authorization header is appended by hook script", function(done){
+            fetchXhrHook.onRequest(function(req){
+              req.headers["Authorization"] = "test-authorization"
+            });
+          
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(function(res){
+                expect(res.status).to.be(200);
+                done();
               })
-            ;
+              .catch(function(e){
+                done(e);
+              });
           });
         });
-      });
-    };
-    checkFetchBehavior(false);
-    checkFetchBehavior(true);
-    
-    describe("with hook", function(){
-      before(function(){
-        fetchXhrHook.clearAll();
-        fetchXhrHook.enable();
-      });
-  
-      beforeEach(function(){
-        fetchXhrHook.clearAll();
-      });
-  
-      describe("Access to url which requires Authorization header", function(){
-        it("status is 403 unauthorized if no authorization header is appended", function(done){
-          window.fetch(authRequiredResponseUrl, {method: "GET"})
-            .then(res => {
-              expect(res.status).to.be(401);
-              done();
-            })
-            .catch(e => {
-              done(e);
-            });
-        });
-        it("status is 200 OK if authorization header is appended by hook script", function(done){
-          fetchXhrHook.onRequest(function(req){
-            req.headers["Authorization"] = "test-authorization"
-          });
-      
-          window.fetch(authRequiredResponseUrl, {method: "GET"})
-            .then(res => {
-              expect(res.status).to.be(200);
-              done();
-            })
-            .catch(e => {
-              done(e);
-            });
-        });
-      });
-      describe("hook request and return fake response", function(){
-        it("returns 200 response even if accessing url which requires Authorization header", function(done){
-          fetchXhrHook.onRequest(function(req, cb){
-            expect(function(){
-              cb.moveToHeaderReceived();
-              cb.moveToLoading();
-            }).not.to.throwError();
-            cb({
-              status: 200,
-              body: "it's dummy",
-            });
-          });
-      
-          window.fetch(authRequiredResponseUrl, {method: "GET"})
-            .then(res => {
-              expect(res.status).to.be(200);
-              return res.text();
-            })
-            .then(text => {
-              expect(text).to.be("it's dummy");
-              done();
-            })
-            .catch(e => {
-              done(e);
-            });
-        });
-        it("does not actually send xhr request until calling xhr callback", function(done){
-          this.timeout(4000);
-          var start = Date.now();
-      
-          fetchXhrHook.onRequest(function(req, cb){
-            window.setTimeout(function(){
+        describe("hook request and return fake response", function(){
+          it("returns 200 response even if accessing url which requires Authorization header", function(done){
+            fetchXhrHook.onRequest(function(req, cb){
+              expect(function(){
+                cb.moveToHeaderReceived();
+                cb.moveToLoading();
+              }).not.to.throwError();
               cb({
                 status: 200,
                 body: "it's dummy",
               });
-            }, 3001);
-          });
-      
-          window.fetch(authRequiredResponseUrl, {method: "GET"})
-            .then(res => {
-              expect(Date.now() - start).greaterThan(3000);
-              expect(res.status).to.be(200);
-              return res.text();
-            })
-            .then(text => {
-              expect(text).to.be("it's dummy");
-              done();
-            })
-            .catch(e => {
-              done(e);
             });
-        });
-        it("returns fake headers by callback function", function(done){
-          fetchXhrHook.onRequest(function(req, cb){
-            cb({
-              status: 200,
-              body: "it's dummy",
-              headers: {"test-header": "aaa"},
-            });
-          });
-      
-          window.fetch(authRequiredResponseUrl, {method: "GET"})
-            .then(res => {
-              expect(res.status).to.be(200);
-              expect(res.headers.get("test-header")).to.be("aaa");
-              return res.text();
-            })
-            .then(text => {
-              expect(text).to.be("it's dummy");
-              done();
-            })
-            .catch(e => {
-              done(e);
-            });
-        });
-        it("does not send fake response when response object is not supplied to callback function", function(done){
-          fetchXhrHook.onRequest(function(req, cb){
-            cb(false);
-          });
-      
-          window.fetch(authRequiredResponseUrl, {method: "GET"})
-            .then(res => {
-              expect(res.status).to.be(401);
-              done();
-            })
-            .catch(e => {
-              done(e);
-            });
-        });
-        it("ignores Exception in request callback in proxy", function(done){
-          fetchXhrHook.onRequest(function(req, cb){
-            throw new Error("error");
-          });
-      
-          fetchXhrHook.onRequest(function(req, cb){
-            cb({
-              status: 200,
-              statusText: "OK",
-            });
-          });
-      
-          window.fetch(authRequiredResponseUrl, {method: "GET"})
-            .then(res => {
-              expect(res.status).to.be(200);
-              done();
-            })
-            .catch(e => {
-              done(e);
-            });
-        });
-      });
-      describe("hook response", function(){
-        it("replace failed 401 response to 200 response", function(done){
-          fetchXhrHook.onResponse(function(req, res){
-            res.status = 200;
-            res.statusText = "OK";
-            res.body = "it's dummy but it's OK";
-          });
-      
-          window.fetch(authRequiredResponseUrl, {method: "GET"})
-            .then(res => {
-              expect(res.status).to.be(200);
-              return res.text();
-            })
-            .then(text => {
-              expect(text).to.be("it's dummy but it's OK");
-              done();
-            })
-            .catch(e => {
-              done(e);
-            });
-        });
-        describe("ResponseProxy", function(){
-          it("can produce error response", function(done){
-            fetchXhrHook.onResponse(function(req, res){
-              res.status = 200;
-              res.statusText = "OK";
-              res.body = "ABC";
-            });
-  
+          
             window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
+              .then(function(res){
                 expect(res.status).to.be(200);
-                var errorResponse = res.constructor.error();
-                expect(errorResponse instanceof Response).to.be(true);
-                expect(errorResponse.type).to.be("error");
+                return res.text();
+              })
+              .then(function(text){
+                expect(text).to.be("it's dummy");
                 done();
               })
-              .catch(e => {
+              .catch(function(e){
                 done(e);
               });
           });
-          it("can produce redirected response", function(done){
-            fetchXhrHook.onResponse(function(req, res){
-              res.status = 200;
-              res.statusText = "OK";
-              res.body = "ABC";
+          it("does not actually send xhr request until calling xhr callback", function(done){
+            this.timeout(4000);
+            var start = Date.now();
+          
+            fetchXhrHook.onRequest(function(req, cb){
+              window.setTimeout(function(){
+                cb({
+                  status: 200,
+                  body: "it's dummy",
+                });
+              }, 3001);
             });
-    
+          
             window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
+              .then(function(res){
+                expect(Date.now() - start).greaterThan(3000);
                 expect(res.status).to.be(200);
-                var errorResponse = res.constructor.redirect(normalApiResponseUrl, 302);
-                expect(errorResponse instanceof Response).to.be(true);
-                expect(errorResponse.status).to.be(302);
+                return res.text();
+              })
+              .then(function(text){
+                expect(text).to.be("it's dummy");
                 done();
               })
-              .catch(e => {
+              .catch(function(e){
                 done(e);
               });
           });
-          it("can turn data to arrayBuffer", function(done){
-            fetchXhrHook.onResponse(function(req, res){
-              res.status = 200;
-              res.statusText = "OK";
-              res.body = "ABC";
-            });
-  
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(200);
-                return res.arrayBuffer();
-              })
-              .then(ab => {
-                var data = new Uint8Array(ab);
-                expect(data).to.have.length(3);
-                expect(String.fromCharCode(data[0])).to.be("A");
-                expect(String.fromCharCode(data[1])).to.be("B");
-                expect(String.fromCharCode(data[2])).to.be("C");
-                done();
-              })
-              .catch(e => {
-                done(e);
-              });
-          });
-          it("can turn data to blob", function(done){
-            fetchXhrHook.onResponse(function(req, res){
-              res.status = 200;
-              res.statusText = "OK";
-              res.body = "ABC";
-            });
-    
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(200);
-                return res.clone().blob();
-              })
-              .then(blob => {
-                expect(blob instanceof Blob).to.be(true);
-                // In some cases, browser like electron does not support `blob.text()`.
-                // So if blob.text is undefined, test no more.
-                if(!blob.text){
-                  return "ABC";
-                }
-                return blob.text();
-              })
-              .then(text => {
-                expect(text).to.be("ABC");
-                done();
-              })
-              .catch(e => {
-                done(e);
-              });
-          });
-          it("can turn data to formData", function(done){
-            fetchXhrHook.onResponse(function(req, res){
-              res.status = 200;
-              res.statusText = "OK";
-              var fd = new FormData();
-              fd.append("key", "value");
-              res.body = fd;
-            });
-    
-            window.fetch(authRequiredResponseUrl, {method: "GET"})
-              .then(res => {
-                expect(res.status).to.be(200);
-                return res.formData();
-              })
-              .then(formData => {
-                expect(formData instanceof FormData).to.be(true);
-                expect(formData.get("key")).to.be("value");
-                done();
-              })
-              .catch(e => {
-                done(e);
-              });
-          });
-        });
-      });
-      describe("hook response with response callback", function(){
-        it("replace failed 401 response to 200 response after waiting seconds", function(done){
-          this.timeout(10000);
-      
-          fetchXhrHook.onResponse(function(req, res, cb){
-            window.setTimeout(function(){
+          it("returns fake headers by callback function", function(done){
+            fetchXhrHook.onRequest(function(req, cb){
               cb({
-                ...res,
+                status: 200,
+                body: "it's dummy",
+                headers: {"test-header": "aaa"},
+              });
+            });
+          
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(function(res){
+                expect(res.status).to.be(200);
+                expect(res.headers.get("test-header")).to.be("aaa");
+                return res.text();
+              })
+              .then(function(text){
+                expect(text).to.be("it's dummy");
+                done();
+              })
+              .catch(function(e){
+                done(e);
+              });
+          });
+          it("does not send fake response when response object is not supplied to callback function", function(done){
+            fetchXhrHook.onRequest(function(req, cb){
+              cb(false);
+            });
+          
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(function(res){
+                expect(res.status).to.be(401);
+                done();
+              })
+              .catch(function(e){
+                done(e);
+              });
+          });
+          it("ignores Exception in request callback in proxy", function(done){
+            fetchXhrHook.onRequest(function(req, cb){
+              throw new Error("error");
+            });
+          
+            fetchXhrHook.onRequest(function(req, cb){
+              cb({
                 status: 200,
                 statusText: "OK",
-                body: "it's dummy but it's OK",
               });
-            }, 3001);
-          });
-      
-          var start = Date.now();
-      
-          window.fetch(authRequiredResponseUrl, {method: "GET"})
-            .then(res => {
-              expect(res.status).to.be(200);
-              expect(Date.now() - start).to.be.greaterThan(3000);
-              return res.text();
-            })
-            .then(text => {
-              expect(text).to.be("it's dummy but it's OK");
-              done();
-            })
-            .catch(e => {
-              done(e);
             });
+          
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(function(res){
+                expect(res.status).to.be(200);
+                done();
+              })
+              .catch(function(e){
+                done(e);
+              });
+          });
         });
-        it("ignores Exception in response callback in proxy", function(done){
-          fetchXhrHook.onResponse(function(req, res, cb){
-            throw new Error("error");
+        describe("hook response", function(){
+          it("replace failed 401 response to 200 response", function(done){
+            fetchXhrHook.onResponse(function(req, res){
+              res.status = 200;
+              res.statusText = "OK";
+              res.body = "it's dummy but it's OK";
+            });
+          
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(function(res){
+                expect(res.status).to.be(200);
+                return res.text();
+              })
+              .then(function(text){
+                expect(text).to.be("it's dummy but it's OK");
+                done();
+              })
+              .catch(function(e){
+                done(e);
+              });
           });
-      
-          fetchXhrHook.onResponse(function(req, res, cb){
-            cb({
-              ...res,
-              status: 200,
-              statusText: "OK",
+          describe("ResponseProxy", function(){
+            it("can produce error response", function(done){
+              fetchXhrHook.onResponse(function(req, res){
+                res.status = 200;
+                res.statusText = "OK";
+                res.body = "ABC";
+              });
+            
+              window.fetch(authRequiredResponseUrl, {method: "GET"})
+                .then(function(res){
+                  expect(res.status).to.be(200);
+                  var errorResponse = res.constructor.error();
+                  expect(errorResponse instanceof Response).to.be(true);
+                  expect(errorResponse.type).to.be("error");
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                });
+            });
+            it("can produce redirected response", function(done){
+              fetchXhrHook.onResponse(function(req, res){
+                res.status = 200;
+                res.statusText = "OK";
+                res.body = "ABC";
+              });
+            
+              window.fetch(authRequiredResponseUrl, {method: "GET"})
+                .then(function(res){
+                  expect(res.status).to.be(200);
+                  var errorResponse = res.constructor.redirect(normalApiResponseUrl, 302);
+                  expect(errorResponse instanceof Response).to.be(true);
+                  expect(errorResponse.status).to.be(302);
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                });
+            });
+            it("can turn data to arrayBuffer", function(done){
+              fetchXhrHook.onResponse(function(req, res){
+                res.status = 200;
+                res.statusText = "OK";
+                res.body = "ABC";
+              });
+            
+              window.fetch(authRequiredResponseUrl, {method: "GET"})
+                .then(function(res){
+                  expect(res.status).to.be(200);
+                  return res.arrayBuffer();
+                })
+                .then(function(ab){
+                  var data = new Uint8Array(ab);
+                  expect(data).to.have.length(3);
+                  expect(String.fromCharCode(data[0])).to.be("A");
+                  expect(String.fromCharCode(data[1])).to.be("B");
+                  expect(String.fromCharCode(data[2])).to.be("C");
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                });
+            });
+            it("can turn data to blob", function(done){
+              fetchXhrHook.onResponse(function(req, res){
+                res.status = 200;
+                res.statusText = "OK";
+                res.body = "ABC";
+              });
+            
+              window.fetch(authRequiredResponseUrl, {method: "GET"})
+                .then(function(res){
+                  expect(res.status).to.be(200);
+                  return res.clone().blob();
+                })
+                .then(function(blob){
+                  expect(blob instanceof Blob).to.be(true);
+                  // In some cases, browser like electron does not support `blob.text()`.
+                  // So if blob.text is undefined, test no more.
+                  if(!blob.text){
+                    return "ABC";
+                  }
+                  return blob.text();
+                })
+                .then(function(text){
+                  expect(text).to.be("ABC");
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                });
+            });
+            it("can turn data to formData", function(done){
+              fetchXhrHook.onResponse(function(req, res){
+                res.status = 200;
+                res.statusText = "OK";
+                var fd = new FormData();
+                fd.append("key", "value");
+                res.body = fd;
+              });
+            
+              window.fetch(authRequiredResponseUrl, {method: "GET"})
+                .then(function(res){
+                  expect(res.status).to.be(200);
+                  return res.formData();
+                })
+                .then(function(formData){
+                  expect(formData instanceof FormData).to.be(true);
+                  expect(formData.get("key")).to.be("value");
+                  done();
+                })
+                .catch(function(e){
+                  done(e);
+                });
             });
           });
-      
-          window.fetch(authRequiredResponseUrl, {method: "GET"})
-            .then(res => {
-              expect(res.status).to.be(200);
-              done();
-            })
-            .catch(e => {
-              done(e);
-            });
         });
-        it("does not return fake response when response object is not supplied to callback function", function(done){
-          fetchXhrHook.onResponse(function(req, res, cb){
-            cb(false);
-          });
-      
-          window.fetch(authRequiredResponseUrl, {method: "GET"})
-            .then(res => {
-              expect(res.status).to.be(401);
-              done();
-            })
-            .catch(e => {
-              done(e);
+        describe("hook response with response callback", function(){
+          it("replace failed 401 response to 200 response after waiting seconds", function(done){
+            this.timeout(10000);
+          
+            fetchXhrHook.onResponse(function(req, res, cb){
+              window.setTimeout(function(){
+                cb({
+                  status: 200,
+                  statusText: "OK",
+                  body: "it's dummy but it's OK",
+                });
+              }, 3001);
             });
+          
+            var start = Date.now();
+          
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(function(res){
+                expect(res.status).to.be(200);
+                expect(Date.now() - start).to.be.greaterThan(3000);
+                return res.text();
+              })
+              .then(function(text){
+                expect(text).to.be("it's dummy but it's OK");
+                done();
+              })
+              .catch(function(e){
+                done(e);
+              });
+          });
+          it("ignores Exception in response callback in proxy", function(done){
+            fetchXhrHook.onResponse(function(req, res, cb){
+              throw new Error("error");
+            });
+          
+            fetchXhrHook.onResponse(function(req, res, cb){
+              cb({
+                status: 200,
+                statusText: "OK",
+              });
+            });
+          
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(function(res){
+                expect(res.status).to.be(200);
+                done();
+              })
+              .catch(function(e){
+                done(e);
+              });
+          });
+          it("does not return fake response when response object is not supplied to callback function", function(done){
+            fetchXhrHook.onResponse(function(req, res, cb){
+              cb(false);
+            });
+          
+            window.fetch(authRequiredResponseUrl, {method: "GET"})
+              .then(function(res){
+                expect(res.status).to.be(401);
+                done();
+              })
+              .catch(function(e){
+                done(e);
+              });
+          });
         });
       });
     });
-  });
+  }
+  else {
+    describe("fetch-hook", function(){
+      it("Skipping fetch test because IE does not implement `window.fetch`", function(){
+        this.skip();
+      });
+    });
+  }
 });

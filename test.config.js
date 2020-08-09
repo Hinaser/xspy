@@ -1,9 +1,10 @@
-const config = {
+var config = {
   protocol: "http",
   host: "localhost",
   port: 18888,
   path: {
     test: "/test",
+    testEs5: "/test/index.es5.html",
     api: {
       normal: "/api/normal",
       timeout: "/api/timeout",

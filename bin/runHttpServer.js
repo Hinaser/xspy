@@ -5,6 +5,21 @@ const config = require("../test.config");
 const app = express();
 
 app.use(express.json());
+app.use(function(req, res, next){
+  let authorization = "";
+  if(req.get("Authorization")){
+    authorization = "Authorization: " + req.get("Authorization");
+  }
+  console.log(req.method, req.path, authorization);
+  
+  // IE eagealy cache every API response and never sends API request after first call.
+  // The header below prevents it.
+  res.append("Cache-Control", "no-cache");
+  res.append("Expires", "-1");
+  
+  next();
+});
+
 app.use("/node_modules", express.static(path.join(__dirname, "../node_modules")));
 app.use("/test.config.js", express.static(path.join(__dirname, "../test.config.js")));
 app.use(config.path.test, express.static(path.join(__dirname, "../test")));
@@ -45,6 +60,7 @@ app.post(config.path.api.post, function (req, res) {
 });
 
 const server = app.listen(config.port);
+console.log("Run: Express Web Server at port " + config.port);
 
 // require("./runBrowser");
 

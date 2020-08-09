@@ -9,4 +9,4 @@ Proxy.setXMLHttpRequest(XHRProxy);
 Proxy.setFetch(fetchProxy);
 Proxy.enable();
 
-window.fetchXhrHook = Proxy;
+export default Proxy;

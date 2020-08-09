@@ -172,8 +172,29 @@ class FetchProxy {
       
       if(init && init.headers){
         const headers = init.headers instanceof Headers ? init.headers : new Headers(init.headers);
-        for(const key of headers.keys()){
-          const value = headers.get(key);
+  
+        /**
+         * Webpack's es5 output for `for-of` loop over iterable does not work as expected as of 2020/08/08.
+         * 
+         * for(const pair of headers.entries()){
+         *   ...
+         * }
+         * 
+         * will be converted to
+         * 
+         * for (var _i = 0, _a = headers.entries(); _i < _a.length; _i++) {
+         *   ...
+         * }
+         * 
+         * Since headers.entries() returns not an array but iterable, `_a.length` is undefined.
+         * So the loop never run.
+         * As a work around, I convert iterable to an array as below.
+         */
+        const entries = Array.from(headers.entries());
+        for(let i=0;i<entries.length;i++){
+          const pair = entries[i];
+          const key = pair[0];
+          const value = pair[1];
           if(value){
             req.headers[key] = value;
           }
@@ -207,8 +228,11 @@ class FetchProxy {
       } as FetchRequest;
   
       if(headers){
-        for(const key of headers.keys()){
-          const value = headers.get(key);
+        const entries = Array.from(headers.entries());
+        for(let i=0;i<entries.length;i++){
+          const pair = entries[i];
+          const key = pair[0];
+          const value = pair[1];
           if(value){
             req.headers[key] = value;
           }

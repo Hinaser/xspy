@@ -23,6 +23,9 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "fetch-xhr-hook.min.js",
+    library: "fetchXhrHook",
+    libraryExport: "default",
+    libraryTarget: "umd",
   },
   optimization: {
     minimizer: [
