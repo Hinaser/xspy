@@ -22,6 +22,7 @@ app.use(function(req, res, next){
 
 app.use("/node_modules", express.static(path.join(__dirname, "../node_modules")));
 app.use("/test.config.js", express.static(path.join(__dirname, "../test.config.js")));
+app.use(config.path.dist, express.static(path.join(__dirname, "../dist")));
 app.use(config.path.test, express.static(path.join(__dirname, "../test")));
 app.get(config.path.api.normal, function (req, res) {
   res.contentType("application/json");

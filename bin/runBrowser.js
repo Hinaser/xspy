@@ -8,7 +8,7 @@ const args = process.argv.slice(2);
 
 const browserStartCommand = (()=>{
   if(args[0]){
-    if(args[0] === "ie"){
+    if(args[0] === "ie" || args[1] === "ie"){
       const iePath = "C:\\Program Files\\Internet Explorer\\iexplore.exe";
       const iePathX86 = "C:\\Program Files (x86)\\Internet Explorer\\iexplore.exe";
       if(fs.existsSync(iePath)){
@@ -22,15 +22,6 @@ const browserStartCommand = (()=>{
       process.exit(1);
       return;
     }
-    else{
-      console.error("Unknown browser");
-      process.exit(1);
-      return;
-    }
-    
-    console.error("Unknown option: ", args[0]);
-    process.exit(1);
-    return;
   }
   
   if(process.platform === "darwin"){
@@ -43,7 +34,18 @@ const browserStartCommand = (()=>{
   return "xdg-open";
 })();
 
-const url = `${config.protocol}://${config.host}:${config.port}${args[0] === "ie" ? config.path.testEs5 : config.path.test}`;
+let url = `${config.protocol}://${config.host}:${config.port}`;
+if(args[0] === "ie"){
+  url = `${url}${config.path.testEs5}`;
+}
+else if(args[0] === "prod"){
+  if(args[1] === "ie"){
+    url = `${url}${config.path.testProdEs5}`;
+  }
+  else{
+    url = `${url}${config.path.testProd}`;
+  }
+}
 
 const command = browserStartCommand + " " + url;
 console.log("Run: " + command);

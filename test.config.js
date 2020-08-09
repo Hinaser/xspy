@@ -5,6 +5,9 @@ var config = {
   path: {
     test: "/test",
     testEs5: "/test/index.es5.html",
+    testProd: "/test/index.prod.html",
+    testProdEs5: "/test/index.prod.es5.html",
+    dist: "/dist",
     api: {
       normal: "/api/normal",
       timeout: "/api/timeout",
