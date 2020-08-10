@@ -46,6 +46,9 @@ else if(args[0] === "prod"){
     url = `${url}${config.path.testProd}`;
   }
 }
+else{
+  url = `${url}${config.path.test}`;
+}
 
 const command = browserStartCommand + " " + url;
 console.log("Run: " + command);

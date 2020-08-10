@@ -1,7 +1,7 @@
 import {Proxy} from "./Proxy";
 import {WindowEx} from "./index.type";
-import {XHRProxy} from "./XMLHttpRequest";
-import {fetchProxy} from "./fetch";
+import {XHRProxy} from "./modules/XMLHttpRequest";
+import {fetchProxy} from "./modules/fetch";
 
 declare let window: WindowEx;
 

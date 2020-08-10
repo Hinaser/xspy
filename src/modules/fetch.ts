@@ -1,5 +1,5 @@
-import {Proxy} from "./Proxy";
-import {FetchRequest, FetchResponse, RequestCallback, ResponseCallback, TResponse} from "./index.type";
+import {Proxy} from "../Proxy";
+import {FetchRequest, FetchResponse, RequestCallback, ResponseCallback, TResponse} from "../index.type";
 import {ResponseProxy} from "./Response";
 
 class FetchProxy {

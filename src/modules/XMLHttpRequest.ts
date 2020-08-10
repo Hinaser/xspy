@@ -1,6 +1,6 @@
-import {RequestCallback, ResponseCallback, XhrRequest, XhrResponse} from "./index.type";
-import {createEvent, makeProgressEvent, toHeaderMap, toHeaderString, isIE} from "./index.lib";
-import {Proxy} from "./Proxy";
+import {RequestCallback, ResponseCallback, XhrRequest, XhrResponse} from "../index.type";
+import {createEvent, makeProgressEvent, toHeaderMap, toHeaderString, isIE} from "../index.lib";
+import {Proxy} from "../Proxy";
 
 export class XHRProxy implements XMLHttpRequest {
   static readonly UNSENT: number = 0;
