@@ -6,7 +6,7 @@
   "author": "Hinaser <rindo.hinase@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "test": "node ./bin/runBrowser.js",
+    "test": "node ./test/bin/runBrowser.js",
     "build": "webpack --config webpack.dev.js && yarn instrument",
     "build:prod": "webpack --config webpack.prod.js",
     "build:es5": "webpack --config webpack.dev.es5.js && yarn instrument",

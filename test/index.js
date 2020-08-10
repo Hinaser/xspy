@@ -3,13 +3,13 @@ const fs = require("fs");
 const path = require("path");
 const config = require("../test.config");
 
-const url = `${config.protocol}://${config.host}:${config.port}${config.path.test}`;
+const url = `${config.protocol}://${config.host}:${config.port}${config.path.testDev}`;
 const nightmare = Nightmare({
   show: true,
 });
 
 // Start web server
-const server = require("../bin/runHttpServer");
+const server = require("./bin/runHttpServer");
 
 function exit(){
   server.close();

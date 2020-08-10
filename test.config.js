@@ -4,9 +4,10 @@ var config = {
   port: 18888,
   path: {
     test: "/test",
-    testEs5: "/test/index.es5.html",
-    testProd: "/test/index.prod.html",
-    testProdEs5: "/test/index.prod.es5.html",
+    testDev: "/test/entry/index.html",
+    testDevEs5: "/test/entry/index.es5.html",
+    testProd: "/test/entry/index.prod.html",
+    testProdEs5: "/test/entry/index.prod.es5.html",
     dist: "/dist",
     api: {
       normal: "/api/normal",

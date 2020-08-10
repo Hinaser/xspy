@@ -1,7 +1,7 @@
 const childProcess = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const config = require("../test.config");
+const config = require("../..//test.config");
 const server = require("./runHttpServer");
 
 const args = process.argv.slice(2);
@@ -36,7 +36,7 @@ const browserStartCommand = (()=>{
 
 let url = `${config.protocol}://${config.host}:${config.port}`;
 if(args[0] === "ie"){
-  url = `${url}${config.path.testEs5}`;
+  url = `${url}${config.path.testDevEs5}`;
 }
 else if(args[0] === "prod"){
   if(args[1] === "ie"){
@@ -47,7 +47,7 @@ else if(args[0] === "prod"){
   }
 }
 else{
-  url = `${url}${config.path.test}`;
+  url = `${url}${config.path.testDev}`;
 }
 
 const command = browserStartCommand + " " + url;
