@@ -11,7 +11,7 @@
     "build:prod": "webpack --config webpack.prod.js",
     "build:es5": "webpack --config webpack.dev.es5.js && yarn instrument",
     "build:es5:prod": "webpack --config webpack.prod.es5.js",
-    "tsc": "tsc --emitDeclarationOnly --declaration --project tsconfig.json --declarationDir ./dist/typings",
+    "tsc": "tsc --emitDeclarationOnly --declaration --project tsconfig.json --declarationDir ./dist/types",
     "coverage": "node ./test/index.js && yarn coverage:report",
     "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./docs/coverage --report-dir ./docs/coverage",
     "instrument": "nyc instrument ./dist ./test/dist"
