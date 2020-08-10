@@ -5,6 +5,11 @@
   "types": "./dist/types",
   "author": "Izumi Hoshino <rindo.hinase@gmail.com>",
   "license": "MIT",
+  "homepage": "https://hinaser.github.io/xspy/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hinaser/xspy"
+  },
   "scripts": {
     "test": "node ./test/bin/runBrowser.js",
     "build": "webpack --config webpack.dev.js && yarn instrument",
