@@ -12,7 +12,7 @@ module.exports = {
       }
     }),
   ],
-  devtool: "inline-source-map",
+  devtool: "source-map",
   module: {
     rules: [
       {
@@ -29,6 +29,9 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, "dist"),
-    filename: "fetch-xhr-hook.js",
+    filename: "xspy.js",
+    library: "xspy",
+    libraryExport: "default",
+    libraryTarget: "umd",
   }
 };

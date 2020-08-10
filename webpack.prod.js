@@ -6,6 +6,7 @@ module.exports = {
   entry: "./src/index.ts",
   plugins: [
   ],
+  devtool: "source-map",
   module: {
     rules: [
       {
@@ -22,7 +23,10 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, "dist"),
-    filename: "fetch-xhr-hook.min.js",
+    filename: "xspy.min.js",
+    library: "xspy",
+    libraryExport: "default",
+    libraryTarget: "umd",
   },
   optimization: {
     minimizer: [

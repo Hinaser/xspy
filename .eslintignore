@@ -1,7 +1,8 @@
 src/**/__tests__/**
 node_modules
 .eslintrc.js
-jest.config.js
-webpack.config.js
-webpack.dev.js
-webpack.prod.js
+webpack.*.js
+test/
+bin/
+test.config.js
+nyc.config.js
