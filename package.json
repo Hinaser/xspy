@@ -1,9 +1,9 @@
 {
   "name": "fetch-xhr-hook",
   "version": "0.0.1",
-  "main": "./dist/fetch-xhr-hook.min.js",
+  "main": "./dist/fetch-xhr-hook.es5.min.js",
   "types": "./dist/typings",
-  "author": "Hinaser <rindo.hinase@gmail.com>",
+  "author": "Izumi Hoshino <rindo.hinase@gmail.com>",
   "license": "MIT",
   "scripts": {
     "test": "node ./test/bin/runBrowser.js",
