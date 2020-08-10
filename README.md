@@ -12,7 +12,7 @@ Confirmed working in IE9+, Firefox, Chrome, Edge
 
 ## Install
 ### Browser
-Copy `/dist/xspy.es5.min.js` and load into your <script> tag before any fetch/XMLHttpRequest.
+Copy `/dist/xspy.es5.min.js` and load into your \<script\> tag before any fetch/XMLHttpRequest.
 
 ```html
 <!-- Rename `xspy.es5.min.js` as you like -->
