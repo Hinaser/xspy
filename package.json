@@ -2,7 +2,7 @@
   "name": "xspy",
   "version": "0.0.1",
   "main": "./dist/xspy.es5.min.js",
-  "types": "./dist/typings",
+  "types": "./dist/types",
   "author": "Izumi Hoshino <rindo.hinase@gmail.com>",
   "license": "MIT",
   "scripts": {
