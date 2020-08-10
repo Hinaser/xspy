@@ -184,7 +184,7 @@ web_modules/
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# dist
 
 # Gatsby files
 .cache/
@@ -255,3 +255,5 @@ $RECYCLE.BIN/
 .history/
 
 .idea/
+
+test/dist/
