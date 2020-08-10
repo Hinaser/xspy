@@ -7,6 +7,6 @@ webpackConfig.module.rules.forEach((rule) => {
   }
 });
 
-webpackConfig.output.filename = "fetch-xhr-hook.es5.js";
+webpackConfig.output.filename = "xspy.es5.js";
 
 module.exports = webpackConfig;

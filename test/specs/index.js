@@ -33,82 +33,82 @@ function isIE(op, version){
 }
 
 
-describe("fetch-xhr-hook", function(){
-  describe("fetchXhrHook", function(){
-    it("returns true if hook is applied", function(){
-      fetchXhrHook.enable();
-      expect(fetchXhrHook.isEnabled()).to.be(true);
+describe("xspy", function(){
+  describe("xspy", function(){
+    it("returns true if spy is applied", function(){
+      xspy.enable();
+      expect(xspy.isEnabled()).to.be(true);
     });
     it("returns empty array if onRequest is not called", function(){
-      expect(fetchXhrHook.getRequestListeners()).to.have.length(0);
+      expect(xspy.getRequestListeners()).to.have.length(0);
     });
     it("returns appended request listener", function(){
       var listener = function(){};
-      fetchXhrHook.onRequest(listener);
-      expect(fetchXhrHook.getRequestListeners()).to.have.length(1);
-      fetchXhrHook.offRequest(listener);
-      expect(fetchXhrHook.getRequestListeners()).to.have.length(0);
+      xspy.onRequest(listener);
+      expect(xspy.getRequestListeners()).to.have.length(1);
+      xspy.offRequest(listener);
+      expect(xspy.getRequestListeners()).to.have.length(0);
     });
     it("a request listener already appended is not registered again", function(){
       var listener = function(){};
-      fetchXhrHook.onRequest(listener);
-      expect(fetchXhrHook.getRequestListeners()).to.have.length(1);
-      fetchXhrHook.onRequest(listener);
-      expect(fetchXhrHook.getRequestListeners()).to.have.length(1);
-      fetchXhrHook.clearRequestHandler();
+      xspy.onRequest(listener);
+      expect(xspy.getRequestListeners()).to.have.length(1);
+      xspy.onRequest(listener);
+      expect(xspy.getRequestListeners()).to.have.length(1);
+      xspy.clearRequestHandler();
     });
     it("returns empty array when clearRequestHandler() is called", function(){
-      fetchXhrHook.onRequest(function(){}, 0);
-      expect(fetchXhrHook.getRequestListeners()).to.have.length(1);
-      fetchXhrHook.clearRequestHandler();
-      expect(fetchXhrHook.getRequestListeners()).to.have.length(0);
+      xspy.onRequest(function(){}, 0);
+      expect(xspy.getRequestListeners()).to.have.length(1);
+      xspy.clearRequestHandler();
+      expect(xspy.getRequestListeners()).to.have.length(0);
     });
     it("returns empty array if onResponse is not called", function(){
-      expect(fetchXhrHook.getResponseListeners()).to.have.length(0);
+      expect(xspy.getResponseListeners()).to.have.length(0);
     });
     it("returns appended response listener", function(){
       var listener = function(){};
-      fetchXhrHook.onResponse(listener);
-      expect(fetchXhrHook.getResponseListeners()).to.have.length(1);
-      fetchXhrHook.offResponse(listener);
-      expect(fetchXhrHook.getResponseListeners()).to.have.length(0);
+      xspy.onResponse(listener);
+      expect(xspy.getResponseListeners()).to.have.length(1);
+      xspy.offResponse(listener);
+      expect(xspy.getResponseListeners()).to.have.length(0);
     });
     it("a response listener already appended is not registered again", function(){
       var listener = function(){};
-      fetchXhrHook.onResponse(listener);
-      expect(fetchXhrHook.getResponseListeners()).to.have.length(1);
-      fetchXhrHook.onResponse(listener);
-      expect(fetchXhrHook.getResponseListeners()).to.have.length(1);
-      fetchXhrHook.clearResponseHandler();
+      xspy.onResponse(listener);
+      expect(xspy.getResponseListeners()).to.have.length(1);
+      xspy.onResponse(listener);
+      expect(xspy.getResponseListeners()).to.have.length(1);
+      xspy.clearResponseHandler();
     });
     it("returns empty array when clearResponseHandler() is called", function(){
-      fetchXhrHook.onResponse(function(){}, 0);
-      expect(fetchXhrHook.getResponseListeners()).to.have.length(1);
-      fetchXhrHook.clearResponseHandler();
-      expect(fetchXhrHook.getResponseListeners()).to.have.length(0);
+      xspy.onResponse(function(){}, 0);
+      expect(xspy.getResponseListeners()).to.have.length(1);
+      xspy.clearResponseHandler();
+      expect(xspy.getResponseListeners()).to.have.length(0);
     });
     it("returns empty request/response array after clearAll() is called", function(){
-      fetchXhrHook.onRequest(function(){}, 0);
-      fetchXhrHook.onResponse(function(){}, 0);
-      expect(fetchXhrHook.getRequestListeners()).to.have.length(1);
-      expect(fetchXhrHook.getResponseListeners()).to.have.length(1);
-      fetchXhrHook.clearAll();
-      expect(fetchXhrHook.getRequestListeners()).to.have.length(0);
-      expect(fetchXhrHook.getResponseListeners()).to.have.length(0);
+      xspy.onRequest(function(){}, 0);
+      xspy.onResponse(function(){}, 0);
+      expect(xspy.getRequestListeners()).to.have.length(1);
+      expect(xspy.getResponseListeners()).to.have.length(1);
+      xspy.clearAll();
+      expect(xspy.getRequestListeners()).to.have.length(0);
+      expect(xspy.getResponseListeners()).to.have.length(0);
     });
   });
-  describe("xhr-hook", function(){
-    var checkXhrBehavior = function(useHook){
-      describe(useHook ? "hooked XMLHttpRequest (fetchXhrHook enabled)" : "original XMLHttpRequest (fetchXhrHook disabled)", function(){
+  describe("spy XMLHttpRequest", function(){
+    var checkXhrBehavior = function(useSpy){
+      describe(useSpy ? "spied XMLHttpRequest (xspy enabled)" : "original XMLHttpRequest (xspy disabled)", function(){
         before(function(){
-          if(useHook){
-            fetchXhrHook.enable();
+          if(useSpy){
+            xspy.enable();
           }
           else{
-            fetchXhrHook.disable();
+            xspy.disable();
           }
         });
-        describe("object structure of hooked XMLHttpRequest", function(){
+        describe("object structure of spied XMLHttpRequest", function(){
           var xhr = new XMLHttpRequest();
           
           describe("properties", function(){
@@ -264,7 +264,7 @@ describe("fetch-xhr-hook", function(){
                     }
                       // When IE, it seems xhr.onreadystatechange() will be called twice with readyState = "OPENED".
                     // First after xhr.open() is executed, second xhr.send() is executed.
-                    else if(!fetchXhrHook.isEnabled()){
+                    else if(!xspy.isEnabled()){
                       expect(this.readyState).to.be(expectedReadyState++);
                       if(!xhrOpenCalled){
                         expectedReadyState--;
@@ -677,17 +677,17 @@ describe("fetch-xhr-hook", function(){
     checkXhrBehavior(false);
     checkXhrBehavior(true);
     
-    describe("with hook", function(){
+    describe("with spy", function(){
       before(function(){
-        fetchXhrHook.clearAll();
-        fetchXhrHook.enable();
+        xspy.clearAll();
+        xspy.enable();
       });
       
       beforeEach(function(){
-        fetchXhrHook.clearAll();
+        xspy.clearAll();
       });
   
-      describe("hook request", function(){
+      describe("spy request", function(){
         it("status is 401 unauthorized if no authorization header is appended", function(done){
           var xhr = new XMLHttpRequest();
           xhr.open("GET", authRequiredResponseUrl);
@@ -704,8 +704,8 @@ describe("fetch-xhr-hook", function(){
           };
           xhr.send();
         });
-        it("status is 200 OK if authorization header is appended by hook script", function(done){
-          fetchXhrHook.onRequest(function(req){
+        it("status is 200 OK if authorization header is appended by spy script", function(done){
+          xspy.onRequest(function(req){
             req.headers["Authorization"] = "test-authorization"
           });
       
@@ -720,7 +720,7 @@ describe("fetch-xhr-hook", function(){
           xhr.send();
         });
         it("status is 401 if appended valid Authorization header is removed", function(done){
-          fetchXhrHook.onRequest(function(req){
+          xspy.onRequest(function(req){
             req.headers = undefined;
           });
   
@@ -741,10 +741,10 @@ describe("fetch-xhr-hook", function(){
           xhr.send();
         });
         it("status is 200 if valid Authorization header is appended after private _request.header is set to undefined", function(done){
-          fetchXhrHook.onRequest(function(req){
+          xspy.onRequest(function(req){
             req.headers = undefined;
           });
-          fetchXhrHook.onRequest(function(req){
+          xspy.onRequest(function(req){
             this.setRequestHeader("Authorization", "test-authorization");
           });
     
@@ -764,15 +764,15 @@ describe("fetch-xhr-hook", function(){
           xhr.send();
         });
       });
-      describe("hook request and return fake response", function(){
+      describe("spy request and return fake response", function(){
         beforeEach(function(){
-          fetchXhrHook.clearAll();
+          xspy.clearAll();
         });
   
         it("returns 200 response even if accessing url which requires Authorization header", function(done){
           this.timeout(10000);
       
-          fetchXhrHook.onRequest(function(req, cb){
+          xspy.onRequest(function(req, cb){
             cb({
               status: 200,
               body: "it's dummy",
@@ -791,7 +791,7 @@ describe("fetch-xhr-hook", function(){
           xhr.send();
         });
         it("event listeners are called when it is replaced with fake response ", function(done){
-          fetchXhrHook.onRequest(function(req, cb){
+          xspy.onRequest(function(req, cb){
             cb({
               status: 200,
               body: "it's dummy",
@@ -838,7 +838,7 @@ describe("fetch-xhr-hook", function(){
         it("does not actually send xhr request until calling xhr callback", function(done){
           this.timeout(10000);
       
-          fetchXhrHook.onRequest(function(req, cb){
+          xspy.onRequest(function(req, cb){
             window.setTimeout(function(){
               cb({
                 status: 200,
@@ -859,7 +859,7 @@ describe("fetch-xhr-hook", function(){
           xhr.send();
         });
         it("returns fake headers by callback function", function(done){
-          fetchXhrHook.onRequest(function(req, cb){
+          xspy.onRequest(function(req, cb){
             cb.moveToHeaderReceived({
               headers: {"test-header": "aaa"},
             });
@@ -901,7 +901,7 @@ describe("fetch-xhr-hook", function(){
           xhr.send();
         });
         it("returns no headers by callback functions after readyState is DONE", function(done){
-          fetchXhrHook.onRequest(function(req, cb){
+          xspy.onRequest(function(req, cb){
             cb({
               status: 200,
               body: "it's dummy",
@@ -949,7 +949,7 @@ describe("fetch-xhr-hook", function(){
         it("calls onabort event listener abort when response is paused in callback function", function(done){
           this.timeout(10000);
       
-          fetchXhrHook.onRequest(function(req, cb){
+          xspy.onRequest(function(req, cb){
             window.setTimeout(function(){
               cb({
                 status: 200,
@@ -970,7 +970,7 @@ describe("fetch-xhr-hook", function(){
         it("does not send fake response when response object is not supplied to callback function", function(done){
           this.timeout(10000);
       
-          fetchXhrHook.onRequest(function(req, cb){
+          xspy.onRequest(function(req, cb){
             cb(false);
           });
       
@@ -990,11 +990,11 @@ describe("fetch-xhr-hook", function(){
           xhr.send();
         });
         it("ignores Exception in request callback in proxy", function(done){
-          fetchXhrHook.onRequest(function(req, cb){
+          xspy.onRequest(function(req, cb){
             throw new Error("error");
           });
       
-          fetchXhrHook.onRequest(function(req, cb){
+          xspy.onRequest(function(req, cb){
             cb({
               status: 200,
               statusText: "OK",
@@ -1012,9 +1012,9 @@ describe("fetch-xhr-hook", function(){
           xhr.send();
         });
       });
-      describe("hook response", function(){
+      describe("spy response", function(){
         it("replace failed 401 response to 200 response", function(done){
-          fetchXhrHook.onResponse(function(req, res){
+          xspy.onResponse(function(req, res){
             res.status = 200;
             res.statusText = "OK";
             res.response = "it's dummy but it's OK";
@@ -1033,11 +1033,11 @@ describe("fetch-xhr-hook", function(){
           xhr.send();
         });
       });
-      describe("hook response with response callback", function(){
+      describe("spy response with response callback", function(){
         it("replace failed 401 response to 200 response after waiting seconds", function(done){
           this.timeout(10000);
       
-          fetchXhrHook.onResponse(function(req, res, cb){
+          xspy.onResponse(function(req, res, cb){
             window.setTimeout(function(){
               cb({
                 status: 200,
@@ -1063,11 +1063,11 @@ describe("fetch-xhr-hook", function(){
           xhr.send();
         });
         it("ignores Exception in response callback in proxy", function(done){
-          fetchXhrHook.onResponse(function(req, res, cb){
+          xspy.onResponse(function(req, res, cb){
             throw new Error("error");
           });
       
-          fetchXhrHook.onResponse(function(req, res, cb){
+          xspy.onResponse(function(req, res, cb){
             cb({
               status: 200,
               statusText: "OK",
@@ -1085,7 +1085,7 @@ describe("fetch-xhr-hook", function(){
           xhr.send();
         });
         it("does not return fake response when response object is not supplied to callback function", function(done){
-          fetchXhrHook.onResponse(function(req, res, cb){
+          xspy.onResponse(function(req, res, cb){
             cb(false);
           });
       
@@ -1109,15 +1109,15 @@ describe("fetch-xhr-hook", function(){
   });
   if(!isIE()){
     // Skip fetch test if browser is IE
-    describe("fetch-hook", function(){
-      var checkFetchBehavior = function(useHook){
-        describe(useHook ? "hooked fetch (fetchXhrHook enabled)" : "original fetch", function(){
+    describe("spy fetch", function(){
+      var checkFetchBehavior = function(useSpy){
+        describe(useSpy ? "spied fetch (xspy enabled)" : "original fetch", function(){
           before(function(){
-            if(useHook){
-              fetchXhrHook.enable();
+            if(useSpy){
+              xspy.enable();
             }
             else{
-              fetchXhrHook.disable();
+              xspy.disable();
             }
           });
         
@@ -1271,14 +1271,14 @@ describe("fetch-xhr-hook", function(){
       checkFetchBehavior(false);
       checkFetchBehavior(true);
     
-      describe("with hook", function(){
+      describe("with spy", function(){
         before(function(){
-          fetchXhrHook.clearAll();
-          fetchXhrHook.enable();
+          xspy.clearAll();
+          xspy.enable();
         });
       
         beforeEach(function(){
-          fetchXhrHook.clearAll();
+          xspy.clearAll();
         });
       
         describe("Access to url which requires Authorization header", function(){
@@ -1292,8 +1292,8 @@ describe("fetch-xhr-hook", function(){
                 done(e);
               });
           });
-          it("status is 200 OK if authorization header is appended by hook script", function(done){
-            fetchXhrHook.onRequest(function(req){
+          it("status is 200 OK if authorization header is appended by spy script", function(done){
+            xspy.onRequest(function(req){
               req.headers["Authorization"] = "test-authorization"
             });
           
@@ -1307,9 +1307,9 @@ describe("fetch-xhr-hook", function(){
               });
           });
         });
-        describe("hook request and return fake response", function(){
+        describe("spy request and return fake response", function(){
           it("returns 200 response even if accessing url which requires Authorization header", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
+            xspy.onRequest(function(req, cb){
               expect(function(){
                 cb.moveToHeaderReceived();
                 cb.moveToLoading();
@@ -1337,7 +1337,7 @@ describe("fetch-xhr-hook", function(){
             this.timeout(4000);
             var start = Date.now();
           
-            fetchXhrHook.onRequest(function(req, cb){
+            xspy.onRequest(function(req, cb){
               window.setTimeout(function(){
                 cb({
                   status: 200,
@@ -1361,7 +1361,7 @@ describe("fetch-xhr-hook", function(){
               });
           });
           it("returns fake headers by callback function", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
+            xspy.onRequest(function(req, cb){
               cb({
                 status: 200,
                 body: "it's dummy",
@@ -1384,7 +1384,7 @@ describe("fetch-xhr-hook", function(){
               });
           });
           it("does not send fake response when response object is not supplied to callback function", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
+            xspy.onRequest(function(req, cb){
               cb(false);
             });
           
@@ -1398,11 +1398,11 @@ describe("fetch-xhr-hook", function(){
               });
           });
           it("ignores Exception in request callback in proxy", function(done){
-            fetchXhrHook.onRequest(function(req, cb){
+            xspy.onRequest(function(req, cb){
               throw new Error("error");
             });
           
-            fetchXhrHook.onRequest(function(req, cb){
+            xspy.onRequest(function(req, cb){
               cb({
                 status: 200,
                 statusText: "OK",
@@ -1419,9 +1419,9 @@ describe("fetch-xhr-hook", function(){
               });
           });
         });
-        describe("hook response", function(){
+        describe("spy response", function(){
           it("replace failed 401 response to 200 response", function(done){
-            fetchXhrHook.onResponse(function(req, res){
+            xspy.onResponse(function(req, res){
               res.status = 200;
               res.statusText = "OK";
               res.body = "it's dummy but it's OK";
@@ -1442,7 +1442,7 @@ describe("fetch-xhr-hook", function(){
           });
           describe("ResponseProxy", function(){
             it("can produce error response", function(done){
-              fetchXhrHook.onResponse(function(req, res){
+              xspy.onResponse(function(req, res){
                 res.status = 200;
                 res.statusText = "OK";
                 res.body = "ABC";
@@ -1461,7 +1461,7 @@ describe("fetch-xhr-hook", function(){
                 });
             });
             it("can produce redirected response", function(done){
-              fetchXhrHook.onResponse(function(req, res){
+              xspy.onResponse(function(req, res){
                 res.status = 200;
                 res.statusText = "OK";
                 res.body = "ABC";
@@ -1480,7 +1480,7 @@ describe("fetch-xhr-hook", function(){
                 });
             });
             it("can turn data to arrayBuffer", function(done){
-              fetchXhrHook.onResponse(function(req, res){
+              xspy.onResponse(function(req, res){
                 res.status = 200;
                 res.statusText = "OK";
                 res.body = "ABC";
@@ -1504,7 +1504,7 @@ describe("fetch-xhr-hook", function(){
                 });
             });
             it("can turn data to blob", function(done){
-              fetchXhrHook.onResponse(function(req, res){
+              xspy.onResponse(function(req, res){
                 res.status = 200;
                 res.statusText = "OK";
                 res.body = "ABC";
@@ -1533,7 +1533,7 @@ describe("fetch-xhr-hook", function(){
                 });
             });
             it("can turn data to formData", function(done){
-              fetchXhrHook.onResponse(function(req, res){
+              xspy.onResponse(function(req, res){
                 res.status = 200;
                 res.statusText = "OK";
                 var fd = new FormData();
@@ -1557,11 +1557,11 @@ describe("fetch-xhr-hook", function(){
             });
           });
         });
-        describe("hook response with response callback", function(){
+        describe("spy response with response callback", function(){
           it("replace failed 401 response to 200 response after waiting seconds", function(done){
             this.timeout(10000);
           
-            fetchXhrHook.onResponse(function(req, res, cb){
+            xspy.onResponse(function(req, res, cb){
               window.setTimeout(function(){
                 cb({
                   status: 200,
@@ -1588,11 +1588,11 @@ describe("fetch-xhr-hook", function(){
               });
           });
           it("ignores Exception in response callback in proxy", function(done){
-            fetchXhrHook.onResponse(function(req, res, cb){
+            xspy.onResponse(function(req, res, cb){
               throw new Error("error");
             });
           
-            fetchXhrHook.onResponse(function(req, res, cb){
+            xspy.onResponse(function(req, res, cb){
               cb({
                 status: 200,
                 statusText: "OK",
@@ -1609,7 +1609,7 @@ describe("fetch-xhr-hook", function(){
               });
           });
           it("does not return fake response when response object is not supplied to callback function", function(done){
-            fetchXhrHook.onResponse(function(req, res, cb){
+            xspy.onResponse(function(req, res, cb){
               cb(false);
             });
           
@@ -1627,7 +1627,7 @@ describe("fetch-xhr-hook", function(){
     });
   }
   else {
-    describe("fetch-hook", function(){
+    describe("spy fetch", function(){
       it("Skipping fetch test because IE does not implement `window.fetch`", function(){
         this.skip();
       });

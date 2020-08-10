@@ -29,8 +29,8 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, "dist"),
-    filename: "fetch-xhr-hook.js",
-    library: "fetchXhrHook",
+    filename: "xspy.js",
+    library: "xspy",
     libraryExport: "default",
     libraryTarget: "umd",
   }

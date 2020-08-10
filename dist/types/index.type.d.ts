@@ -1,7 +1,7 @@
 import { Proxy } from "./Proxy";
 export interface WindowEx extends Window {
     XMLHttpRequest: new () => XMLHttpRequest;
-    fetchXhrHook: typeof Proxy;
+    xspy: typeof Proxy;
 }
 export declare type EventType = "request" | "response";
 export declare type RequestCallback<T extends "xhr" | "fetch"> = {

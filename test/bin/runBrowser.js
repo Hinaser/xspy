@@ -1,7 +1,7 @@
 const childProcess = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const config = require("../..//test.config");
+const config = require("../../test.config");
 const server = require("./runHttpServer");
 
 const args = process.argv.slice(2);

@@ -35,7 +35,7 @@ nightmare
      * modify correct src path as below.
      */
     // data = data.replace(/webpack:\/\/\/.\/src\//g, "../src/");
-    data = data.replace(/webpack:\/\/fetchXhrHook\/.\/src\//g, "../src/");
+    data = data.replace(/webpack:\/\/xspy\/.\/src\//g, "../src/");
     
     return new Promise((resolve, reject) => {
       const callback = (err) => {

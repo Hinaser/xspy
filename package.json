@@ -1,7 +1,7 @@
 {
-  "name": "fetch-xhr-hook",
+  "name": "xspy",
   "version": "0.0.1",
-  "main": "./dist/fetch-xhr-hook.es5.min.js",
+  "main": "./dist/xspy.es5.min.js",
   "types": "./dist/typings",
   "author": "Izumi Hoshino <rindo.hinase@gmail.com>",
   "license": "MIT",
