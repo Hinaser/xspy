@@ -6,6 +6,7 @@ module.exports = {
   entry: "./src/index.ts",
   plugins: [
   ],
+  devtool: "source-map",
   module: {
     rules: [
       {
