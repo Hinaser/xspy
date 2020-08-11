@@ -1,4 +1,6 @@
 # xspy
+[![npm version](https://badge.fury.io/js/xspy.svg)](https://badge.fury.io/js/xspy) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Hook ajax request and/or response. Modify header, body, status, credentials, etc in request/response
 
 - Catch fetch/XMLHttpRequest request before it is sent.
