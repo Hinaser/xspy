@@ -5,11 +5,14 @@
   "types": "./dist/types",
   "author": "Izumi Hoshino <rindo.hinase@gmail.com>",
   "license": "MIT",
+  "description": "Hook ajax(fetch/xhr) request and/or response. Modify header, body, status, credentials, etc in request/response",
+  "keywords": ["fetch", "XMLHttpRequest", "browser", "ajax","hook", "spy", "proxy", "dummy", "layer", "intercept", "mock", "modify", "edit"],
   "homepage": "https://hinaser.github.io/xspy/",
   "repository": {
     "type": "git",
     "url": "https://github.com/Hinaser/xspy"
   },
+  "bugs": "https://github.com/Hinaser/xspy/issues",
   "scripts": {
     "test": "node ./test/bin/runBrowser.js",
     "build": "webpack --config webpack.dev.js && yarn instrument",
