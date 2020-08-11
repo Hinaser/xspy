@@ -1,5 +1,5 @@
 # xspy
-[![npm version](https://badge.fury.io/js/xspy.svg)](https://badge.fury.io/js/xspy) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![npm version](https://badge.fury.io/js/xspy.svg)](https://badge.fury.io/js/xspy) [![Coverage Status](https://coveralls.io/repos/github/Hinaser/xspy/badge.svg?branch=v0.0.1)](https://coveralls.io/github/Hinaser/xspy?branch=v0.0.1) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Hook ajax request and/or response. Modify header, body, status, credentials, etc in request/response
 
@@ -13,7 +13,9 @@ Hook ajax request and/or response. Modify header, body, status, credentials, etc
 https://hinaser.github.io/xspy/
 
 ## Browser Support
-Tested with IE9+, Firefox, Chrome, Edge
+Tested with IE9+, Firefox, Chrome, Edge.
+
+You can test this module in your favorite browser by `git clone` this repo and `npm run test` or `yarn test` in it.
 
 ## Install
 ### Browser
