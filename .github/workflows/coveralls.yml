@@ -1,0 +1,20 @@
+name: Coveralls
+
+on:
+  push:
+    branches: [ master, v0.0.1 ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Report coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Coveralls GitHub Action
+        uses: coverallsapp/github-action@v1.1.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./docs/coverage/lcov.info

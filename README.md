@@ -1,18 +1,25 @@
 # xspy
+[![npm version](https://badge.fury.io/js/xspy.svg)](https://badge.fury.io/js/xspy) [![Coverage Status](https://coveralls.io/repos/github/Hinaser/xspy/badge.svg?branch=v0.0.1)](https://coveralls.io/github/Hinaser/xspy?branch=v0.0.1) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-- Hook fetch/XMLHttpRequest request to modify before it is sent.
-- Hook fetch/XMLHttpRequest response before it is available to client.
-- Comes with type definitions by Typescript for good developer experience.
+Hook ajax request and/or response. Modify header, body, status, credentials, etc in request/response
+
+- Catch fetch/XMLHttpRequest request before it is sent.
+- Catch fetch/XMLHttpRequest response before it is available to client.
+- Comes with type definitions by Typescript for great developer experience.
+- High test coverage
+- Works in modern browsers and **IE9/10/11**.
 
 ## Doc
 https://hinaser.github.io/xspy/
 
 ## Browser Support
-Confirmed working in IE9+, Firefox, Chrome, Edge
+Tested with IE9+, Firefox, Chrome, Edge.
+
+You can test this module in your favorite browser by `git clone` this repo and `npm run test` or `yarn test` in it.
 
 ## Install
 ### Browser
-Copy `/dist/xspy.es5.min.js` and load into your <script> tag before any fetch/XMLHttpRequest.
+Copy `/dist/xspy.es5.min.js` and load into your \<script\> tag before any fetch/XMLHttpRequest.
 
 ```html
 <!-- Rename `xspy.es5.min.js` as you like -->
@@ -64,6 +71,94 @@ xspy.onResponse((req, res) => {
 });
 ```
 
+## API
+
+### `xspy.onRequest(handler, [n])`
+- `handler`: (request, [callback]) => void
+  - `request`: Request
+  - `callback`: ([response]) => void
+    - `response`: Response
+- `n`: number
+
+Add custom request `handler` to index `n`. (handler at index `n`=0 will be called first)  
+If you do not specify `n`, it appends `handler` to the last. (Called after all previous handlers finishes.)
+
+This `handler` will be called just before web request by `window.fetch()` or `xhr.sent()` departs from browser.  
+You can modify the request object(i.e. headers, body) before it is sent. See detail for request object later.
+
+Note that when you supplies `handler` as 2 parameters function(`request` and `callback`),
+request will not be dispatched until you manually run `callback()` function in `handler`.
+
+If you run `callback()` without any arguments or with non-object value like `false`, 
+request processing goes forward without generating fake response.
+
+If you run `callback(res)` with a fake response object, it immediately returns the fake response after all onRequest handlers
+finishes. In this case, real request never flies to any external network.
+
+### `xspy.onResponse(handler, [n])`
+- `handler`: (request, response, [callback]) => void
+  - `request`: Request
+  - `response`: Response
+  - `callback`: () => void
+- `n`: number
+
+Add custom response `handler` to index `n`. (handler at index `n`=0 will be called first)  
+If you do not specify `n`, it appends `handler` to the last. (Called after all previous handlers finishes.)
+
+This `handler` will be called just before API response is available at
+`window.fetch().then(res => ...)` or `xhr.onreadystatechange`, and so on.  
+You can modify the response object before it is available to the original requester. See detail for response object later.
+
+Note that when you supplies `handler` as 3 parameters function(`request`, `response` and `callback`),
+response will not be returned to the original requester until you manually run `callback()` function in `handler`.
+
+### `xspy.enable()`
+
+**When xspy module is loaded from \<script\> tag or import/require, it is enabled by default.*
+
+Enable spying on request/response by `window.fetch()` and/or `xhr.send()`.
+When enabled, `window.fetch` and `XMLHttpRequest` is replaced by extended function/object to intercept communications.
+
+### `xspy.disable()`
+
+Disable spying on request/response. `window.fetch` and `XMLHttpRequest` will be set back to original ones.  
+Note that request/response handlers are not cleared and stored in memory.
+
+### `Request`
+
+Properties of `Request` object can be edited in request handler.
+Some properties are only available for specific `ajaxType`.
+
+- `ajaxType`: string - "xhr" or "fetch". Indicating whether request is dispatched from `fetch()` or `xhr.send()`.
+- `method`: string - Request method like `GET`/`POST`/`PUT`/`DELETE`/...
+- `url`: string - Request url.
+- `timeout`: number - Ignored if `ajaxType` is `fetch`
+- `headers`: Object - i.e. `{"Authorization": "auth-strings", "content-type": "application/json"}`
+- `body`: Various types - Request body. It can be undefined if original requester does not set request body.
+
+**And if `ajaxType` is `xhr`**
+- `async` `username` `password` `responseType` `withCredentials` `upload`
+
+**And else if `ajaxType` is `fetch`**
+- `cache` `credentials` `integrity` `keepalive` `mode` `redirect` `referrer` `referrerPolicy` `signal`
+
+### `Response`
+
+Properties of `Response` object can be edited in response handler.
+Some properties are only available for specific `ajaxType`.
+
+- `ajaxType`: string - "xhr" or "fetch". Indicating whether response is for `fetch().then(res => ...)` or `xhr`.
+- `status`: number
+- `statusText`: string
+- `headers`: Object
+- `body?`: Various types - Response body
+
+**And if `ajaxType` is `xhr`**
+- `responseType` `response` `responseText` `responseXML` `responseURL`
+ 
+**And else if `ajaxType` is `fetch`**
+- `ok` `redirected` `type` `url`
+ 
 ## Work inspired by
 
 https://github.com/jpillora/xhook

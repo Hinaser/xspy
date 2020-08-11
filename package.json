@@ -1,10 +1,32 @@
 {
   "name": "xspy",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "main": "./dist/xspy.es5.min.js",
   "types": "./dist/types",
   "author": "Izumi Hoshino <rindo.hinase@gmail.com>",
   "license": "MIT",
+  "description": "Hook ajax(fetch/xhr) request and/or response. Modify header, body, status, credentials, etc in request/response",
+  "keywords": [
+    "fetch",
+    "XMLHttpRequest",
+    "browser",
+    "ajax",
+    "hook",
+    "spy",
+    "proxy",
+    "dummy",
+    "layer",
+    "intercept",
+    "mock",
+    "modify",
+    "edit"
+  ],
+  "homepage": "https://hinaser.github.io/xspy/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hinaser/xspy"
+  },
+  "bugs": "https://github.com/Hinaser/xspy/issues",
   "scripts": {
     "test": "node ./test/bin/runBrowser.js",
     "build": "webpack --config webpack.dev.js && yarn instrument",
@@ -13,7 +35,8 @@
     "build:es5:prod": "webpack --config webpack.prod.es5.js",
     "tsc": "tsc --emitDeclarationOnly --declaration --project tsconfig.json --declarationDir ./dist/types",
     "coverage": "node ./test/index.js && yarn coverage:report",
-    "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./docs/coverage --report-dir ./docs/coverage",
+    "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./docs/coverage --report-dir ./docs/coverage && yarn fixLcov",
+    "fixLcov": "node test/bin/fixLcovInfo.js",
     "instrument": "nyc instrument ./dist ./test/dist"
   },
   "devDependencies": {
