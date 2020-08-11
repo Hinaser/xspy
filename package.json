@@ -1,12 +1,26 @@
 {
   "name": "xspy",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "main": "./dist/xspy.es5.min.js",
   "types": "./dist/types",
   "author": "Izumi Hoshino <rindo.hinase@gmail.com>",
   "license": "MIT",
   "description": "Hook ajax(fetch/xhr) request and/or response. Modify header, body, status, credentials, etc in request/response",
-  "keywords": ["fetch", "XMLHttpRequest", "browser", "ajax","hook", "spy", "proxy", "dummy", "layer", "intercept", "mock", "modify", "edit"],
+  "keywords": [
+    "fetch",
+    "XMLHttpRequest",
+    "browser",
+    "ajax",
+    "hook",
+    "spy",
+    "proxy",
+    "dummy",
+    "layer",
+    "intercept",
+    "mock",
+    "modify",
+    "edit"
+  ],
   "homepage": "https://hinaser.github.io/xspy/",
   "repository": {
     "type": "git",
