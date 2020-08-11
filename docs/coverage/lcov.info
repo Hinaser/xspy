@@ -1,5 +1,5 @@
 TN:
-SF:src\Proxy.ts
+SF:src/Proxy.ts
 FN:5,(anonymous_13)
 FN:15,(anonymous_14)
 FN:23,(anonymous_15)
@@ -98,7 +98,7 @@ BRF:16
 BRH:15
 end_of_record
 TN:
-SF:src\index.lib.ts
+SF:src/index.lib.ts
 FN:1,(anonymous_30)
 FN:4,(anonymous_36)
 FN:34,(anonymous_37)
@@ -170,7 +170,7 @@ BRF:17
 BRH:16
 end_of_record
 TN:
-SF:src\index.ts
+SF:src/index.ts
 FNF:0
 FNH:0
 DA:1,4
@@ -184,7 +184,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src\modules\Response.ts
+SF:src/modules/Response.ts
 FN:1,(anonymous_43)
 FN:18,(anonymous_44)
 FN:36,(anonymous_45)
@@ -245,7 +245,7 @@ BRF:10
 BRH:8
 end_of_record
 TN:
-SF:src\modules\XMLHttpRequest.ts
+SF:src/modules/XMLHttpRequest.ts
 FN:2,(anonymous_54)
 FN:73,(anonymous_55)
 FN:38,(anonymous_56)
@@ -794,7 +794,7 @@ BRF:145
 BRH:138
 end_of_record
 TN:
-SF:src\modules\fetch.ts
+SF:src/modules/fetch.ts
 FN:1,(anonymous_97)
 FN:11,(anonymous_98)
 FN:24,(anonymous_99)

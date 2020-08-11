@@ -21,7 +21,8 @@
     "build:es5:prod": "webpack --config webpack.prod.es5.js",
     "tsc": "tsc --emitDeclarationOnly --declaration --project tsconfig.json --declarationDir ./dist/types",
     "coverage": "node ./test/index.js && yarn coverage:report",
-    "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./docs/coverage --report-dir ./docs/coverage",
+    "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./docs/coverage --report-dir ./docs/coverage && yarn fixLcov",
+    "fixLcov": "node test/bin/fixLcovInfo.js",
     "instrument": "nyc instrument ./dist ./test/dist"
   },
   "devDependencies": {
