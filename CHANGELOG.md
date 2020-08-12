@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- Replace headless browser for testing from nightmare to puppeteer.
+
 ## [0.0.1] - 2020-08-12
 
 ### Added
