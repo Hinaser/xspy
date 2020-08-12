@@ -229,8 +229,13 @@ describe("xspy", function(){
             it("onreadystatechange event is triggered and readyState is OPENED", function(done){
               var xhr = new XMLHttpRequest();
               xhr.onreadystatechange = function(){
-                expect(this.readyState).to.be(this.OPENED);
-                done();
+                try{
+                  expect(this.readyState).to.be(this.OPENED);
+                  done();
+                }
+                catch(e){
+                  done(e);
+                }
               };
               xhr.open("GET", normalApiResponseUrl);
             });
@@ -364,9 +369,14 @@ describe("xspy", function(){
                 xhr.responseType = "text";
                 xhr.onreadystatechange = function(){
                   if(this.readyState === XMLHttpRequest.DONE){
-                    expect(this.response).to.be("{\"result\":\"normal\"}");
-                    expect(this.responseText).to.be("{\"result\":\"normal\"}");
-                    done();
+                    try{
+                      expect(this.response).to.be("{\"result\":\"normal\"}");
+                      expect(this.responseText).to.be("{\"result\":\"normal\"}");
+                      done();
+                    }
+                    catch(e){
+                      done(e);
+                    }
                   }
                 };
                 xhr.send();
@@ -377,15 +387,20 @@ describe("xspy", function(){
                 xhr.responseType = "document";
                 xhr.onreadystatechange = function(){
                   if(this.readyState === XMLHttpRequest.DONE){
-                    if(isIE("<=", 10)){
-                      expect(this.response instanceof Document).to.be(true);
-                      expect(this.responseXML instanceof Document).to.be(true);
+                    try{
+                      if(isIE("<=", 10)){
+                        expect(this.response instanceof Document).to.be(true);
+                        expect(this.responseXML instanceof Document).to.be(true);
+                      }
+                      else{
+                        expect(this.response instanceof XMLDocument).to.be(true);
+                        expect(this.responseXML instanceof XMLDocument).to.be(true);
+                      }
+                      done();
                     }
-                    else{
-                      expect(this.response instanceof XMLDocument).to.be(true);
-                      expect(this.responseXML instanceof XMLDocument).to.be(true);
+                    catch(e){
+                      done(e);
                     }
-                    done();
                   }
                 };
                 xhr.send();
@@ -409,10 +424,10 @@ describe("xspy", function(){
             describe("event listeners", function(){
               // IE <= 9 does not support `loadstart` event.
               if(isIE("<=", 9)){
-                it("should fire onloadstart event listener. (Skipping as IE <= 9 does not support loadstart event)", function(done){
+                it("should fire onloadstart event listener. (Skipping as IE <= 9 does not support loadstart event)", function(){
                   this.skip();
                 });
-                it("should fire onloadstart function. (Skipping as IE <= 9 does not support loadstart event)", function(done){
+                it("should fire onloadstart function. (Skipping as IE <= 9 does not support loadstart event)", function(){
                   this.skip();
                 });
               }
@@ -531,8 +546,13 @@ describe("xspy", function(){
                 xhr.open("GET", normalApiResponseUrl);
                 xhr.onreadystatechange = function(){
                   if(this.readyState === XMLHttpRequest.DONE){
-                    expect(this.getAllResponseHeaders()).to.not.empty();
-                    done();
+                    try{
+                      expect(this.getAllResponseHeaders()).to.not.empty();
+                      done();
+                    }
+                    catch(e){
+                      done(e);
+                    }
                   }
                 };
                 xhr.send();
@@ -542,8 +562,13 @@ describe("xspy", function(){
                 xhr.open("GET", normalApiResponseUrl);
                 xhr.onreadystatechange = function(){
                   if(this.readyState === XMLHttpRequest.DONE){
-                    expect(this.getResponseHeader("content-type")).to.not.empty();
-                    done();
+                    try{
+                      expect(this.getResponseHeader("content-type")).to.not.empty();
+                      done();
+                    }
+                    catch(e){
+                      done(e);
+                    }
                   }
                 };
                 xhr.send();
@@ -599,8 +624,13 @@ describe("xspy", function(){
                   xhr.timeout = 1000;
                 }
                 xhr.addEventListener("timeout", function(){
-                  expect(this.status).to.be(0);
-                  done();
+                  try{
+                    expect(this.status).to.be(0);
+                    done();
+                  }
+                  catch(e){
+                    done(e);
+                  }
                 });
                 xhr.open("GET", timeoutApiResponseUrl);
                 if(isIE()){
@@ -615,8 +645,13 @@ describe("xspy", function(){
                   xhr.timeout = 1000;
                 }
                 xhr.ontimeout = function(){
-                  expect(this.status).to.be(0);
-                  done();
+                  try{
+                    expect(this.status).to.be(0);
+                    done();
+                  }
+                  catch(e){
+                    done(e);
+                  }
                 };
                 xhr.open("GET", timeoutApiResponseUrl);
                 if(isIE()){
@@ -636,16 +671,21 @@ describe("xspy", function(){
               it("onabort event listener is called", function(done){
                 var xhr = new XMLHttpRequest();
                 xhr.addEventListener("abort", function(){
-                  // According to https://xhr.spec.whatwg.org/#the-abort()-method ,
-                  // readyState should be set to 0 when it is DONE.
-                  // MDN
-                  // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort
-                  // says readyState should be 0 when aborting, but in actual browser it is set to DONE(4).
-                  /*
-                  expect(this.readyState).to.be(this.UNSENT);
-                  */
-                  expect(this.status).to.be(0);
-                  done();
+                  try{
+                    // According to https://xhr.spec.whatwg.org/#the-abort()-method ,
+                    // readyState should be set to 0 when it is DONE.
+                    // MDN
+                    // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort
+                    // says readyState should be 0 when aborting, but in actual browser it is set to DONE(4).
+                    /*
+                    expect(this.readyState).to.be(this.UNSENT);
+                    */
+                    expect(this.status).to.be(0);
+                    done();
+                  }
+                  catch(e){
+                    done(e);
+                  }
                 });
                 xhr.open("GET", timeoutApiResponseUrl);
                 xhr.send();
@@ -654,16 +694,21 @@ describe("xspy", function(){
               it("onabort function is called", function(done){
                 var xhr = new XMLHttpRequest();
                 xhr.onabort = function(){
-                  // According to https://xhr.spec.whatwg.org/#the-abort()-method ,
-                  // readyState should be set to 0 when it is DONE.
-                  // MDN
-                  // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort
-                  // says readyState should be 0 when aborting, but in actual browser it is set to DONE(4).
-                  /*
-                  expect(this.readyState).to.be(this.UNSENT);
-                  */
-                  expect(this.status).to.be(0);
-                  done();
+                  try{
+                    // According to https://xhr.spec.whatwg.org/#the-abort()-method ,
+                    // readyState should be set to 0 when it is DONE.
+                    // MDN
+                    // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort
+                    // says readyState should be 0 when aborting, but in actual browser it is set to DONE(4).
+                    /*
+                    expect(this.readyState).to.be(this.UNSENT);
+                    */
+                    expect(this.status).to.be(0);
+                    done();
+                  }
+                  catch(e){
+                    done(e);
+                  }
                 };
                 xhr.open("GET", timeoutApiResponseUrl);
                 xhr.send();
@@ -713,8 +758,13 @@ describe("xspy", function(){
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
             if(this.readyState === xhr.DONE){
-              expect(this.status).to.be(200);
-              done();
+              try{
+                expect(this.status).to.be(200);
+                done();
+              }
+              catch(e){
+                done(e);
+              }
             }
           };
           xhr.send();
@@ -783,9 +833,14 @@ describe("xspy", function(){
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
             if(this.readyState === xhr.DONE){
-              expect(this.status).to.be(200);
-              expect(this.response).to.be("it's dummy");
-              done();
+              try{
+                expect(this.status).to.be(200);
+                expect(this.response).to.be("it's dummy");
+                done();
+              }
+              catch(e){
+                done(e);
+              }
             }
           };
           xhr.send();
@@ -818,19 +873,29 @@ describe("xspy", function(){
               calledFunctions.push("LOADING");
             }
             if(this.readyState === xhr.DONE){
-              expect(calledFunctions.filter(function(f){ return f === "HEADERS_RECEIVED"; })).to.have.length(1);
-              expect(calledFunctions.filter(function(f){ return f === "LOADING"; })).to.have.length(1);
-              expect(calledFunctions.filter(function(f){ return f === "onloadstart"; })).to.have.length(1);
-              expect(calledFunctions.filter(function(f){ return f === "onloadstartListener"; })).to.have.length(1);
+              try{
+                expect(calledFunctions.filter(function(f){ return f === "HEADERS_RECEIVED"; })).to.have.length(1);
+                expect(calledFunctions.filter(function(f){ return f === "LOADING"; })).to.have.length(1);
+                expect(calledFunctions.filter(function(f){ return f === "onloadstart"; })).to.have.length(1);
+                expect(calledFunctions.filter(function(f){ return f === "onloadstartListener"; })).to.have.length(1);
+              }
+              catch(e){
+                done(e);
+              }
             }
           };
       
           xhr.addEventListener("loadend", function(){
-            expect(calledFunctions.filter(function(f){ return f === "onload"; })).to.have.length(1);
-            expect(calledFunctions.filter(function(f){ return f === "onloadend"; })).to.have.length(1);
-            expect(calledFunctions.filter(function(f){ return f === "onloadListener"; })).to.have.length(1);
-            expect(calledFunctions.filter(function(f){ return f === "onloadendListener"; })).to.have.length(1);
-            done();
+            try{
+              expect(calledFunctions.filter(function(f){ return f === "onload"; })).to.have.length(1);
+              expect(calledFunctions.filter(function(f){ return f === "onloadend"; })).to.have.length(1);
+              expect(calledFunctions.filter(function(f){ return f === "onloadListener"; })).to.have.length(1);
+              expect(calledFunctions.filter(function(f){ return f === "onloadendListener"; })).to.have.length(1);
+              done();
+            }
+            catch(e){
+              done(e);
+            }
           });
       
           xhr.send();
@@ -851,9 +916,14 @@ describe("xspy", function(){
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
             if(this.readyState === xhr.DONE){
-              expect(xhr.status).to.be(200);
-              expect(this.response).to.be("it's dummy");
-              done();
+              try{
+                expect(xhr.status).to.be(200);
+                expect(this.response).to.be("it's dummy");
+                done();
+              }
+              catch(e){
+                done(e);
+              }
             }
           };
           xhr.send();
@@ -961,8 +1031,13 @@ describe("xspy", function(){
           var xhr = new XMLHttpRequest();
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onabort = function(){
-            expect(this.status).to.be(0);
-            done();
+            try{
+              expect(this.status).to.be(0);
+              done();
+            }
+            catch(e){
+              done(e);
+            }
           }
           xhr.send();
           xhr.abort();
@@ -1005,8 +1080,13 @@ describe("xspy", function(){
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
             if(this.readyState === xhr.DONE){
-              expect(this.status).to.be(200);
-              done();
+              try{
+                expect(this.status).to.be(200);
+                done();
+              }
+              catch(e){
+                done(e);
+              }
             }
           }
           xhr.send();
@@ -1025,9 +1105,14 @@ describe("xspy", function(){
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
             if(this.readyState === xhr.DONE){
-              expect(this.status).to.be(200);
-              expect(this.response).to.be("it's dummy but it's OK");
-              done();
+              try{
+                expect(this.status).to.be(200);
+                expect(this.response).to.be("it's dummy but it's OK");
+                done();
+              }
+              catch(e){
+                done(e);
+              }
             }
           };
           xhr.send();
@@ -1054,10 +1139,15 @@ describe("xspy", function(){
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
             if(this.readyState === xhr.DONE){
-              expect(this.status).to.be(200);
-              expect(this.response).to.be("it's dummy but it's OK");
-              expect(Date.now() - start).to.be.greaterThan(3000);
-              done();
+              try{
+                expect(this.status).to.be(200);
+                expect(this.response).to.be("it's dummy but it's OK");
+                expect(Date.now() - start).to.be.greaterThan(3000);
+                done();
+              }
+              catch(e){
+                done(e);
+              }
             }
           };
           xhr.send();
@@ -1078,8 +1168,13 @@ describe("xspy", function(){
           xhr.open("GET", authRequiredResponseUrl);
           xhr.onreadystatechange = function(){
             if(this.readyState === xhr.DONE){
-              expect(this.status).to.be(200);
-              done();
+              try{
+                expect(this.status).to.be(200);
+                done();
+              }
+              catch(e){
+                done(e);
+              }
             }
           }
           xhr.send();
