@@ -27,7 +27,7 @@ const runCoverage = async () => {
   const pages = await browser.pages();
   const page = pages[0];
   
-  await page.waitForFunction(() => window.__mochaFinished__)
+  await page.waitForFunction(() => window.__mochaFinished__);
   
   const coverage = await page.evaluate(() => window.__coverage__);
   let data = JSON.stringify(coverage);

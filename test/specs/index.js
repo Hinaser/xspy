@@ -257,6 +257,11 @@ describe("xspy", function(){
                 expect(function(){xhr.send()}).to.throwError();
               });
               it("onreadystatechange event is triggered in order", function(done){
+                // It's so strange but this test sometimes takes a bit more than 2000ms (mocha's default timeout)
+                // This case is limited for chromium browser from `puppeteer` package.
+                // @TODO Investigate why puppeteer's chromium takes over 2000ms to complete this test case.
+                this.timeout(4000);
+                
                 var xhr = new XMLHttpRequest();
                 var expectedReadyState;
                 var xhrOpenCalled = false;
