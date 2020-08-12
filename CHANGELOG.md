@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.0.1] - 2020-08-12
 
 ### Added
@@ -16,4 +18,5 @@
 - lcov.info path format.  
   * Changed windows style path separator to UNIX style as coveralls cannot parse windows style path separator.
   
+[Unreleased]: https://github.com/Hinaser/xspy/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/Hinaser/xspy/releases/tag/v0.0.1
