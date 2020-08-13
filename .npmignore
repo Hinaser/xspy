@@ -6,3 +6,4 @@
 .gitignore
 test.config.js
 yarn.lock
+/.github
