@@ -1,3 +1,6 @@
+import {EventExt} from "./modules/Event";
+import {ProgressEventExt} from "./modules/ProgressEvent";
+
 const userAgent = typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent : "";
 
 // If browser is not IE, IEVersion will be NaN
@@ -31,29 +34,6 @@ export function isIE(op?: "<"|"<="|">"|">="|"=", version?: number){
   return IEVersion === version;
 }
 
-export const createEvent = (type: string): Event => {
-  try{
-    /* istanbul ignore else */
-    if(!isIE() && typeof Event !== "undefined"){
-      return new Event(type);
-    }
-    
-    // When browser is IE, `new Event()` will fail.
-    /* istanbul ignore next */
-    const ev = window.document.createEvent("Event");
-    /* istanbul ignore next */
-    ev.initEvent(type);
-    /* istanbul ignore next */
-    return ev;
-  }
-  catch(e){
-    /* istanbul ignore next */
-    return {
-      type,
-    } as Event;
-  }
-};
-
 export const toHeaderMap = (responseHeaders: string) => {
   const headers = responseHeaders.trim().split(/[\r\n]+/)
   
@@ -86,15 +66,18 @@ export const toHeaderString = (headerMap: {[name: string]: string}) => {
   return headers.join("\r\n") + "\r\n";
 };
 
-export const makeProgressEvent = (type: string, loaded: number, lengthComputable: boolean = false, total: number = 0) => {
-  const ev: ProgressEvent<XMLHttpRequestEventTarget> = {
-    ...createEvent(type),
+export const createXHREvent = (type: string, xhr: XMLHttpRequest): Event => {
+  return new EventExt(type, undefined, xhr, true);
+};
+
+export const makeProgressEvent = (type: string, xhr: XMLHttpRequest, loaded: number, lengthComputable: boolean = false, total: number = 0) => {
+  return new ProgressEventExt<XMLHttpRequestEventTarget>(
     type,
-    target: null,
-    loaded,
+    undefined,
+    xhr,
+    true,
     lengthComputable,
-    total,
-  };
-  
-  return ev;
+    loaded,
+    total
+  );
 }
