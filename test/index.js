@@ -32,6 +32,11 @@ const runCoverage = async () => {
   const pages = await browser.pages();
   const page = pages[0];
   
+  if(process.env.GITHUB_ACTIONS){
+    console.log("Visiting: " + url);
+    await page.goto(url);
+  }
+  
   await page.waitForFunction(() => typeof window.__test_result__ !== "undefined");
   exitCode = (await page.evaluate(() => window.__test_result__)) ? 0 : 1;
   
