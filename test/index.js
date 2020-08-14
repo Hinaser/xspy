@@ -13,7 +13,7 @@ function exit(){
   process.exit(0);
 }
 
-const folderPath = path.join(__dirname, "..", "docs", "coverage");
+const folderPath = path.join(__dirname, "coverage");
 const pathToCoverage = path.join(folderPath, "coverage.json");
 if(!fs.existsSync(folderPath)){
   fs.mkdirSync(folderPath, {recursive: true});
