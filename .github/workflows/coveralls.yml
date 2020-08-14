@@ -20,6 +20,12 @@ jobs:
         with:
           node-version: '12.x'
 
+      - name: Upgrade to latest Yarn
+        run: yarn policies set-version
+
+      - name: Make build dir for testing
+        run: mkdir -p ./test/dist
+
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
@@ -32,8 +38,11 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
+            
+      - name: Install dependencies
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn --frozen-lockfile
 
-      - run: yarn --frozen-lockfile
       - run: yarn build
       - run: yarn test:ci
       - run: yarn coverage:report
