@@ -34,7 +34,7 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - run: yarn --frozen-lockfile
-      - run: yarn build:prod
+      - run: yarn build
       - run: yarn test:ci
 
       - name: Coveralls GitHub Action
