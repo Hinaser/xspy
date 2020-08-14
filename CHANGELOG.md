@@ -5,6 +5,9 @@
 ### Changed
 - Replace headless browser for testing from nightmare to puppeteer.
 
+### Removed
+- Removed map files from `/dist` folder
+
 ## [0.0.1] - 2020-08-12
 
 ### Added
