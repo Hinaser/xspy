@@ -22,10 +22,13 @@ if(!fs.existsSync(folderPath)){
 }
 
 const runCoverage = async () => {
-  const browser = await puppeteer.launch({
+  const launchOpt = process.env.GITHUB_ACTIONS ? {} : {
     headless: false,
     args: [`--app=${url}`, `--window-size=${800},${600}`],
-  });
+  };
+  
+  const browser = await puppeteer.launch(launchOpt);
+  console.log("Launched puppeteer browser");
   const pages = await browser.pages();
   const page = pages[0];
   
@@ -43,6 +46,7 @@ const runCoverage = async () => {
   data = data.replace(/webpack:\/\/xspy\/.\/src\//g, "../src/");
   
   await fs.promises.writeFile(pathToCoverage, data);
+  console.log("Output coverage to " + pathToCoverage);
 };
 
 runCoverage()

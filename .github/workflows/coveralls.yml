@@ -36,6 +36,7 @@ jobs:
       - run: yarn --frozen-lockfile
       - run: yarn build
       - run: yarn test:ci
+      - run: yarn coverage:report
 
       - name: Coveralls GitHub Action
         uses: coverallsapp/github-action@v1.1.1
