@@ -1,20 +1,20 @@
-name: Coveralls
-
+name: Test in browser
 on:
   push:
     branches:
-      - master
+      - '*'
+      - '!master'
   pull_request:
     branches:
-      - master
-
+      - '*'
+      - '!master'
 jobs:
-  coverage:
-    name: Report coverage
+  test:
+    name: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
+ 
       - name: Setup Node 12
         uses: actions/setup-node@v1
         with:
@@ -36,9 +36,3 @@ jobs:
       - run: yarn --frozen-lockfile
       - run: yarn build:prod
       - run: yarn test:ci
-
-      - name: Coveralls GitHub Action
-        uses: coverallsapp/github-action@v1.1.1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./test/coverage/lcov.info

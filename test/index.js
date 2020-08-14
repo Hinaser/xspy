@@ -8,9 +8,11 @@ const url = `${config.protocol}://${config.host}:${config.port}${config.path.tes
 // Start web server
 const server = require("./bin/runHttpServer");
 
+let exitCode = 2;
+
 function exit(){
   server.close();
-  process.exit(0);
+  process.exit(exitCode);
 }
 
 const folderPath = path.join(__dirname, "coverage");
@@ -27,7 +29,8 @@ const runCoverage = async () => {
   const pages = await browser.pages();
   const page = pages[0];
   
-  await page.waitForFunction(() => window.__mochaFinished__);
+  await page.waitForFunction(() => typeof window.__test_result__ !== "undefined");
+  exitCode = (await page.evaluate(() => window.__test_result__)) ? 0 : 1;
   
   const coverage = await page.evaluate(() => window.__coverage__);
   let data = JSON.stringify(coverage);
@@ -43,5 +46,11 @@ const runCoverage = async () => {
 };
 
 runCoverage()
-  .catch(console.error)
-  .finally(exit);
+  .catch((e) => {
+    exitCode = 1;
+    console.error(e);
+  })
+  .finally(() => {
+    console.log(exitCode === 0 ? "Test passed!" : "Test failed")
+    exit();
+  });

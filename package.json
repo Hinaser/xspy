@@ -29,6 +29,7 @@
   "bugs": "https://github.com/Hinaser/xspy/issues",
   "scripts": {
     "test": "node ./test/bin/runBrowser.js",
+    "test:ci": "node ./test/index.js",
     "build": "webpack --config webpack.dev.js && yarn instrument",
     "build:prod": "webpack --config webpack.prod.js",
     "build:es5": "webpack --config webpack.dev.es5.js && yarn instrument",
