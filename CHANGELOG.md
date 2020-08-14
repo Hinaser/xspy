@@ -3,10 +3,11 @@
 ## [Unreleased]
 
 ### Changed
-- Replace headless browser for testing from nightmare to puppeteer.
+- Replaced the headless browser for testing from nightmare to puppeteer.
 
 ### Removed
 - Removed map files from `/dist` folder
+- Removed non-minified build file from `/dist` folder.
 
 ## [0.0.1] - 2020-08-12
 
