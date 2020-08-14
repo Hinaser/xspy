@@ -256,7 +256,7 @@ export class XHRProxy implements XMLHttpRequest {
       }
       this._xhr.withCredentials = this.withCredentials;
     
-      this.dispatchEvent(makeProgressEvent("loadstart", this._xhr, 0));
+      this.dispatchEvent(makeProgressEvent("loadstart", this, 0));
     
       const headerMap = this._request.headers;
       const headerNames = headerMap ? Object.keys(headerMap) : [];
@@ -379,7 +379,7 @@ export class XHRProxy implements XMLHttpRequest {
       this._xhr.abort();
     }
     else{
-      this.dispatchEvent(makeProgressEvent("abort", this._xhr, 0));
+      this.dispatchEvent(makeProgressEvent("abort", this, 0));
     }
     
     this._transitioning = false;
@@ -450,7 +450,7 @@ export class XHRProxy implements XMLHttpRequest {
         return;
       }
       
-      this.dispatchEvent(makeProgressEvent("loadstart", this._xhr, 0));
+      this.dispatchEvent(makeProgressEvent("loadstart", this, 0));
   
       this._response = {
         ...this._response,
@@ -584,7 +584,7 @@ export class XHRProxy implements XMLHttpRequest {
   }
   
   private _triggerStateAction(){
-    const readyStateChangeEvent = createXHREvent("readystatechange", this._xhr);
+    const readyStateChangeEvent = createXHREvent("readystatechange", this);
     
     if(this._readyState === this.OPENED){
       this.dispatchEvent(readyStateChangeEvent);
@@ -614,9 +614,9 @@ export class XHRProxy implements XMLHttpRequest {
   
         const emitLoadEvent = () => {
           if(!this._hasError){
-            this.dispatchEvent(makeProgressEvent("load", this._xhr, 0));
+            this.dispatchEvent(makeProgressEvent("load", this, 0));
           }
-          this.dispatchEvent(makeProgressEvent("loadend", this._xhr, 0));
+          this.dispatchEvent(makeProgressEvent("loadend", this, 0));
         };
   
         if(this._request.async === false){
