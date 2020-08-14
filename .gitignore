@@ -259,4 +259,5 @@ $RECYCLE.BIN/
 test/dist/
 
 /dist/xspy.*.map
-/test/coverage/
+/test/coverage/lcov-report/
+/test/coverage/coverage.json
