@@ -32,13 +32,13 @@
     "test:ci": "node ./test/index.js",
     "build": "webpack --config webpack.dev.js && yarn instrument",
     "build:prod": "webpack --config webpack.prod.js",
-    "build:es5": "webpack --config webpack.dev.es5.js && yarn instrument",
+    "build:es5": "webpack --config webpack.dev.es5.js",
     "build:es5:prod": "webpack --config webpack.prod.es5.js",
     "tsc": "tsc --emitDeclarationOnly --declaration --project tsconfig.json --declarationDir ./dist/types",
     "coverage": "node ./test/index.js && yarn coverage:report",
     "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./test/coverage --report-dir ./test/coverage && yarn fixLcov",
     "fixLcov": "node test/bin/fixLcovInfo.js",
-    "instrument": "nyc instrument ./dist ./test/dist"
+    "instrument": "nyc instrument ./dist/xspy.js > ./test/dist/xspy.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^3.8.0",
