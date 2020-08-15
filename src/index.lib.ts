@@ -1,5 +1,5 @@
-import {EventExt} from "./modules/Event";
-import {ProgressEventExt} from "./modules/ProgressEvent";
+import {EventExt, EventInitExt} from "./modules/Event";
+import {ProgressEventExt, ProgressEventInitExt} from "./modules/ProgressEvent";
 
 const userAgent = typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent : "";
 
@@ -66,18 +66,26 @@ export const toHeaderString = (headerMap: {[name: string]: string}) => {
   return headers.join("\r\n") + "\r\n";
 };
 
-export const createXHREvent = (type: string, xhr: XMLHttpRequest): Event => {
-  return new EventExt(type, undefined, xhr, true);
+export const createXHREvent = (type: string, xhr: XMLHttpRequest, bubbles: boolean): Event => {
+  const init: EventInitExt<XMLHttpRequestEventTarget> = {
+    target: xhr,
+    bubbles,
+    path: [xhr],
+    eventPhase: Event.AT_TARGET,
+  };
+  return new EventExt<XMLHttpRequestEventTarget>(type, init);
 };
 
-export const makeProgressEvent = (type: string, xhr: XMLHttpRequest, loaded: number, lengthComputable: boolean = false, total: number = 0) => {
-  return new ProgressEventExt<XMLHttpRequestEventTarget>(
-    type,
-    undefined,
-    xhr,
-    true,
+export const makeProgressEvent = (type: string, xhr: XMLHttpRequest, bubbles: boolean, lengthComputable: boolean = true, loaded: number, total: number = 0) => {
+  const init: ProgressEventInitExt<XMLHttpRequestEventTarget> = {
+    target: xhr,
+    bubbles,
+    path: [xhr],
+    eventPhase: Event.AT_TARGET,
     lengthComputable,
     loaded,
-    total
-  );
+    total,
+  };
+  
+  return new ProgressEventExt<XMLHttpRequestEventTarget>(type, init);
 }

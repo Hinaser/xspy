@@ -149,6 +149,50 @@ var describe_XMLHttpRequest = function(){
               };
               xhr.open("GET", normalApiResponseUrl);
             });
+            it("onreadystatechange event has expected property values", function(done){
+              var xhr = new XMLHttpRequest();
+              xhr.onreadystatechange = function(event){
+                try{
+                  expect(typeof event).to.be("object");
+                  if(isIE("=", 11)){
+                    expect(event.bubbles).to.be(true);
+                  }
+                  else{
+                    expect(event.bubbles).to.be(false);
+                  }
+                  expect(event.cancelBubble).to.be(false);
+                  expect(event.cancelable).to.be(false);
+                  if(!isIE()){
+                    expect(event.composed).to.be(false);
+                  }
+                  expect(event.defaultPrevented).to.be(false);
+                  // event.composedPath() returns different values in chrome/firefox/IE. Skip this test.
+                  // expect(event.composedPath()).to.have.length(1);
+                  // expect(event.composedPath()[0]).to.be(xhr);
+                  expect(event.eventPhase).to.be(event.AT_TARGET);
+                  if(!isIE()){
+                    expect(event.returnValue).to.be(true);
+                  }
+                  expect(event.timeStamp).to.be.greaterThan(0);
+                  expect(event.type).to.be("readystatechange");
+                  expect(event.target).to.be(xhr);
+                  expect(event.currentTarget).to.be(xhr);
+                  // Skip test because `xhr.srcElement` is deprecated.
+                  // expect(event.srcElement).to.be(xhr);
+                  expect(event.isTrusted).to.be(true);
+                  
+                  expect(function(){ event.preventDefault(); }).to.not.throwError();
+                  // defaultPrevented remains `false` because onreadystatechange event is not cancelable.
+                  expect(event.defaultPrevented).to.be(false);
+                  
+                  done();
+                }
+                catch(e){
+                  done(e);
+                }
+              };
+              xhr.open("GET", normalApiResponseUrl);
+            });
             it("throws an Error when just an argument is passed", function(){
               var xhr = new XMLHttpRequest();
               expect(function(){xhr.open("GET")}).to.throwError();
@@ -200,6 +244,171 @@ var describe_XMLHttpRequest = function(){
                 };
                 xhr.open("GET", normalApiResponseUrl);
                 xhrOpenCalled = true;
+                xhr.send();
+              });
+              it("onreadystatechange event has expected property values", function(done){
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function(event){
+                  if(this.readyState !== xhr.DONE){
+                    return;
+                  }
+                  try{
+                    expect(typeof event).to.be("object");
+                    if(isIE("=", 11)){
+                      expect(event.bubbles).to.be(true);
+                    }
+                    else{
+                      expect(event.bubbles).to.be(false);
+                    }
+                    expect(event.cancelBubble).to.be(false);
+                    expect(event.cancelable).to.be(false);
+                    if(!isIE()){
+                      expect(event.composed).to.be(false);
+                    }
+                    expect(event.defaultPrevented).to.be(false);
+                    // event.composedPath() returns different values in chrome/firefox/IE. Skip this test.
+                    // expect(event.composedPath()).to.have.length(1);
+                    // expect(event.composedPath()[0]).to.be(xhr);
+                    expect(event.eventPhase).to.be(event.AT_TARGET);
+                    if(!isIE()){
+                      expect(event.returnValue).to.be(true);
+                    }
+                    expect(event.timeStamp).to.be.greaterThan(0);
+                    expect(event.type).to.be("readystatechange");
+                    expect(event.target).to.be(xhr);
+                    expect(event.currentTarget).to.be(xhr);
+                    // Skip test because `xhr.srcElement` is deprecated.
+                    // expect(event.srcElement).to.be(xhr);
+                    expect(event.isTrusted).to.be(true);
+  
+                    expect(function(){ event.preventDefault(); }).to.not.throwError();
+                    // defaultPrevented remains `false` because onreadystatechange event is not cancelable.
+                    expect(event.defaultPrevented).to.be(false);
+                    
+                    done();
+                  }
+                  catch(e){
+                    done(e);
+                  }
+                };
+                xhr.open("GET", normalApiResponseUrl);
+                xhr.send();
+              });
+              it("onload function has expected property values", function(done){
+                var xhr = new XMLHttpRequest();
+                xhr.onload = function(event){
+                  try{
+                    expect(typeof event).to.be("object");
+                    // Unlike in onreadystatechange function, event.bubbles is false even in IE.
+                    expect(event.bubbles).to.be(false);
+                    expect(event.cancelBubble).to.be(false);
+                    expect(event.cancelable).to.be(false);
+                    if(!isIE()){
+                      expect(event.composed).to.be(false);
+                    }
+                    expect(event.defaultPrevented).to.be(false);
+                    // event.composedPath() returns different values in chrome/firefox/IE. Skip this test.
+                    // expect(event.composedPath()).to.have.length(1);
+                    // expect(event.composedPath()[0]).to.be(xhr);
+                    expect(event.eventPhase).to.be(event.AT_TARGET);
+                    if(!isIE()){
+                      expect(event.returnValue).to.be(true);
+                    }
+                    expect(event.timeStamp).to.be.greaterThan(0);
+                    expect(event.type).to.be("load");
+                    expect(event.target).to.be(xhr);
+                    expect(event.currentTarget).to.be(xhr);
+                    // Skip test because `xhr.srcElement` is deprecated.
+                    // expect(event.srcElement).to.be(xhr);
+                    expect(event.isTrusted).to.be(true);
+  
+                    if(!isIE("<=", 9)){
+                      expect(event.lengthComputable).to.be(true);
+                      expect(event.loaded).to.be(19); // '{"result":"normal"}'.length === 19
+                      expect(event.total).to.be(19); // '{"result":"normal"}'.length === 19
+                    }
+        
+                    expect(function(){ event.preventDefault(); }).to.not.throwError();
+                    // defaultPrevented remains `false` because onreadystatechange event is not cancelable.
+                    expect(event.defaultPrevented).to.be(false);
+        
+                    done();
+                  }
+                  catch(e){
+                    done(e);
+                  }
+                };
+                xhr.open("GET", normalApiResponseUrl);
+                xhr.send();
+              });
+              it("onload event has expected property values", function(done){
+                var xhr = new XMLHttpRequest();
+                xhr.addEventListener("load", function(event){
+                  try{
+                    expect(typeof event).to.be("object");
+                    // Unlike in onreadystatechange function, event.bubbles is false even in IE.
+                    expect(event.bubbles).to.be(false);
+                    expect(event.cancelBubble).to.be(false);
+                    expect(event.cancelable).to.be(false);
+                    if(!isIE()){
+                      expect(event.composed).to.be(false);
+                    }
+                    expect(event.defaultPrevented).to.be(false);
+                    // event.composedPath() returns different values in chrome/firefox/IE. Skip this test.
+                    // expect(event.composedPath()).to.have.length(1);
+                    // expect(event.composedPath()[0]).to.be(xhr);
+                    expect(event.eventPhase).to.be(event.AT_TARGET);
+                    if(!isIE()){
+                      expect(event.returnValue).to.be(true);
+                    }
+                    expect(event.timeStamp).to.be.greaterThan(0);
+                    expect(event.type).to.be("load");
+                    expect(event.target).to.be(xhr);
+                    expect(event.currentTarget).to.be(xhr);
+                    // Skip test because `xhr.srcElement` is deprecated.
+                    // expect(event.srcElement).to.be(xhr);
+                    expect(event.isTrusted).to.be(true);
+  
+                    if(!isIE("<=", 9)){
+                      expect(event.lengthComputable).to.be(true);
+                      expect(event.loaded).to.be(19); // '{"result":"normal"}'.length === 19
+                      expect(event.total).to.be(19); // '{"result":"normal"}'.length === 19
+                    }
+  
+                    expect(function(){ event.preventDefault(); }).to.not.throwError();
+                    // defaultPrevented remains `false` because onreadystatechange event is not cancelable.
+                    expect(event.defaultPrevented).to.be(false);
+                    
+                    done();
+                  }
+                  catch(e){
+                    done(e);
+                  }
+                });
+                xhr.open("GET", normalApiResponseUrl);
+                xhr.send();
+              });
+              it("onload event stops propagate after stopImmediatePropagation is called.", function(done){
+                var xhr = new XMLHttpRequest();
+                xhr.addEventListener("load", function(event){
+                  event.stopImmediatePropagation();
+                  done();
+                });
+                xhr.addEventListener("load", function(event){
+                  done("This should not be called");
+                });
+                xhr.open("GET", normalApiResponseUrl);
+                xhr.send();
+              });
+              it("onload event does not stop propagate after stopPropagation is called.", function(done){
+                var xhr = new XMLHttpRequest();
+                xhr.addEventListener("load", function(event){
+                  event.stopPropagation();
+                });
+                xhr.addEventListener("load", function(event){
+                  done();
+                });
+                xhr.open("GET", normalApiResponseUrl);
                 xhr.send();
               });
               it("synchronously gets response when async option is set to false", function(){
