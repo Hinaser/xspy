@@ -19,6 +19,9 @@ export declare class XHRProxy implements XMLHttpRequest {
     private _response;
     private _responseText;
     private _responseXML;
+    private _lengthComputable;
+    private _loaded;
+    private _total;
     readyState: number;
     status: number;
     statusText: string;
@@ -58,6 +61,7 @@ export declare class XHRProxy implements XMLHttpRequest {
     private _createResponseCallback;
     private _loadHeaderFromXHRToVirtualResponse;
     private _loadBodyFromXHRToVirtualResponse;
+    private _loadLoadingProgress;
     private _syncHeaderFromVirtualResponse;
     private _syncBodyFromVirtualResponse;
     private _onError;
