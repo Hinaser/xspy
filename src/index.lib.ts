@@ -1,6 +1,7 @@
 import {EventExt, EventInitExt} from "./modules/Event";
 import {ProgressEventExt, ProgressEventInitExt} from "./modules/ProgressEvent";
 
+/* istanbul ignore next */
 const userAgent = typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent : "";
 
 // If browser is not IE, IEVersion will be NaN
@@ -76,7 +77,7 @@ export const createXHREvent = (type: string, xhr: XMLHttpRequest, bubbles: boole
   return new EventExt<XMLHttpRequestEventTarget>(type, init);
 };
 
-export const makeProgressEvent = (type: string, xhr: XMLHttpRequest, bubbles: boolean, lengthComputable: boolean = true, loaded: number, total: number = 0) => {
+export const makeProgressEvent = (type: string, xhr: XMLHttpRequest, bubbles: boolean, lengthComputable: boolean, loaded: number, total: number) => {
   const init: ProgressEventInitExt<XMLHttpRequestEventTarget> = {
     target: xhr,
     bubbles,
