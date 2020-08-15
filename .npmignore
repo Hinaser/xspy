@@ -1,9 +1,7 @@
 .idea/
+/.github/
 /docs/
 /test/
 .editorconfig
-.eslintignore
 .gitignore
 test.config.js
-yarn.lock
-/.github
