@@ -9,17 +9,23 @@
   "keywords": [
     "fetch",
     "XMLHttpRequest",
-    "browser",
     "ajax",
     "hook",
     "spy",
     "proxy",
     "dummy",
-    "layer",
     "intercept",
     "mock",
-    "modify",
-    "edit"
+    "modify"
+  ],
+  "files": [
+    "dist/types/",
+    "dist/xspy.es5.min.js",
+    "dist/xspy.min.js",
+    "src/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "homepage": "https://hinaser.github.io/xspy/",
   "repository": {
