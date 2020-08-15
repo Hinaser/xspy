@@ -42,7 +42,7 @@ import xspy from "xspy";
 
 ## Example
 
-#### Add Authorization header if it doesn't exist on request header
+### Add Authorization header if it doesn't exist on request header
 
 ```js
 xspy.onRequest((req) => {
@@ -52,7 +52,7 @@ xspy.onRequest((req) => {
 });
 ```
 
-#### Return fake API response without sending actual ajax request
+### Return fake API response without sending actual ajax request
 ```js
 xspy.onRequest((req, callback) => {
   const fakeResponse = {
@@ -64,7 +64,7 @@ xspy.onRequest((req, callback) => {
 });
 ```
 
-#### Log every response headers to console
+### Log every response headers to console
 ```js
 xspy.onResponse((req, res) => {
   console.log(res.url, res.status, res.headers);
