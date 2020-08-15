@@ -1,52 +1,65 @@
-const Nightmare = require("nightmare");
+const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
 const config = require("../test.config");
 
 const url = `${config.protocol}://${config.host}:${config.port}${config.path.testDev}`;
-const nightmare = Nightmare({
-  show: true,
-});
 
 // Start web server
 const server = require("./bin/runHttpServer");
 
+let exitCode = 2;
+
 function exit(){
   server.close();
-  process.exit(0);
+  process.exit(exitCode);
 }
 
-nightmare
-  .goto(url)
-  .wait(() => window.__mochaFinished__)
-  .evaluate(() => window.__coverage__)
-  .end()
-  .then(coverage => {
-    const folderPath = path.join(__dirname, "..", "docs", "coverage");
-    const pathToCoverage = path.join(folderPath, "coverage.json");
-    if(!fs.existsSync(folderPath)){
-      fs.mkdirSync(folderPath, {recursive: true});
-    }
-    
-    let data = JSON.stringify(coverage);
+const folderPath = path.join(__dirname, "coverage");
+const pathToCoverage = path.join(folderPath, "coverage.json");
+if(!fs.existsSync(folderPath)){
+  fs.mkdirSync(folderPath, {recursive: true});
+}
+
+const runCoverage = async () => {
+  const launchOpt = process.env.GITHUB_ACTIONS ? {} : {
+    headless: false,
+    args: [`--app=${url}`, `--window-size=${800},${600}`],
+  };
   
-    /**
-     * Since source map path will be /dist:webpack:///./src/.... which cannot be reached,
-     * modify correct src path as below.
-     */
-    // data = data.replace(/webpack:\/\/\/.\/src\//g, "../src/");
-    data = data.replace(/webpack:\/\/xspy\/.\/src\//g, "../src/");
-    
-    return new Promise((resolve, reject) => {
-      const callback = (err) => {
-        if(err){
-          return reject(err);
-        }
-        return resolve();
-      };
-      fs.writeFile(pathToCoverage, data, callback);
-    });
+  const browser = await puppeteer.launch(launchOpt);
+  console.log("Launched puppeteer browser");
+  const pages = await browser.pages();
+  const page = pages[0];
+  
+  if(process.env.GITHUB_ACTIONS){
+    console.log("Visiting: " + url);
+    await page.goto(url);
+  }
+  
+  await page.waitForFunction(() => typeof window.__test_result__ !== "undefined");
+  exitCode = (await page.evaluate(() => window.__test_result__)) ? 0 : 1;
+  
+  const coverage = await page.evaluate(() => window.__coverage__);
+  let data = JSON.stringify(coverage);
+  
+  /**
+   * Since source map path will be /dist:webpack:///./src/.... which cannot be reached,
+   * modify correct src path as below.
+   */
+  // data = data.replace(/webpack:\/\/\/.\/src\//g, "../src/");
+  data = data.replace(/webpack:\/\/xspy\/.\/src\//g, "../src/");
+  
+  await fs.promises.writeFile(pathToCoverage, data);
+  console.log("Output coverage to " + pathToCoverage);
+};
+
+runCoverage()
+  .catch((e) => {
+    exitCode = 1;
+    console.error(e);
   })
-  .catch(console.error)
-  .finally(exit)
-;
+  .finally(() => {
+    console.log(exitCode === 0 ? "Test passed!" : "Test failed")
+    exit();
+  });

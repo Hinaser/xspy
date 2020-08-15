@@ -40,10 +40,13 @@
 </script>
 <script src="/dist/xspy.es5.min.js"></script>
 <script src="/test.config.js"></script>
+<script src="/test/specs/xspy.js"></script>
+<script src="/test/specs/XMLHttpRequest.js"></script>
+<script src="/test/specs/fetch.js"></script>
 <script src="/test/specs/index.js"></script>
 <script class="mocha-exec">
   mocha.run(function(failures){
-    window.__mochaFinished__ = true;
+    window.__test_result__ = !failures;
   });
 </script>
 </body>

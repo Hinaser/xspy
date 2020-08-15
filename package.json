@@ -1,6 +1,6 @@
 {
   "name": "xspy",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "./dist/xspy.es5.min.js",
   "types": "./dist/types",
   "author": "Izumi Hoshino <rindo.hinase@gmail.com>",
@@ -9,17 +9,23 @@
   "keywords": [
     "fetch",
     "XMLHttpRequest",
-    "browser",
     "ajax",
     "hook",
     "spy",
     "proxy",
     "dummy",
-    "layer",
     "intercept",
     "mock",
-    "modify",
-    "edit"
+    "modify"
+  ],
+  "files": [
+    "dist/types/",
+    "dist/xspy.es5.min.js",
+    "dist/xspy.min.js",
+    "src/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "homepage": "https://hinaser.github.io/xspy/",
   "repository": {
@@ -29,15 +35,14 @@
   "bugs": "https://github.com/Hinaser/xspy/issues",
   "scripts": {
     "test": "node ./test/bin/runBrowser.js",
-    "build": "webpack --config webpack.dev.js && yarn instrument",
-    "build:prod": "webpack --config webpack.prod.js",
-    "build:es5": "webpack --config webpack.dev.es5.js && yarn instrument",
-    "build:es5:prod": "webpack --config webpack.prod.es5.js",
+    "test:ci": "node ./test/index.js",
+    "build": "webpack --config webpack.dev.js && webpack --config webpack.dev.es5.js && yarn instrument",
+    "build:prod": "webpack --config webpack.prod.js && webpack --config webpack.prod.es5.js",
     "tsc": "tsc --emitDeclarationOnly --declaration --project tsconfig.json --declarationDir ./dist/types",
     "coverage": "node ./test/index.js && yarn coverage:report",
-    "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./docs/coverage --report-dir ./docs/coverage && yarn fixLcov",
+    "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./test/coverage --report-dir ./test/coverage && yarn fixLcov",
     "fixLcov": "node test/bin/fixLcovInfo.js",
-    "instrument": "nyc instrument ./dist ./test/dist"
+    "instrument": "nyc instrument ./dist/xspy.js > ./test/dist/xspy.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^3.8.0",
@@ -49,9 +54,9 @@
     "express": "^4.17.1",
     "fork-ts-checker-webpack-plugin": "^5.0.14",
     "mocha": "^8.1.1",
-    "nightmare": "^3.0.2",
     "nyc": "^15.1.0",
     "parallel-webpack": "^2.6.0",
+    "puppeteer": "^5.2.1",
     "terser-webpack-plugin": "^4.0.0",
     "ts-loader": "^8.0.2",
     "typescript": "^3.9.7",

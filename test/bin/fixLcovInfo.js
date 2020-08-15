@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const lcovPath = path.join(__dirname, "..", "..", "docs", "coverage", "lcov.info");
+const lcovPath = path.join(__dirname, "..", "coverage", "lcov.info");
 
 if(!fs.existsSync(lcovPath)){
   console.log("lcov.info was not found at: ", lcovPath);

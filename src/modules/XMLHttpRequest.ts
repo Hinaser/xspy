@@ -1,5 +1,5 @@
 import {RequestCallback, ResponseCallback, XhrRequest, XhrResponse} from "../index.type";
-import {createEvent, makeProgressEvent, toHeaderMap, toHeaderString, isIE} from "../index.lib";
+import {createXHREvent, makeProgressEvent, toHeaderMap, toHeaderString, isIE} from "../index.lib";
 import {Proxy} from "../Proxy";
 
 export class XHRProxy implements XMLHttpRequest {
@@ -25,6 +25,9 @@ export class XHRProxy implements XMLHttpRequest {
   private _response: XhrResponse = XHRProxy._createResponse();
   private _responseText: string = "";
   private _responseXML: Document | null = null;
+  private _lengthComputable: boolean = false;
+  private _loaded: number = 0;
+  private _total: number = 0;
   
   public readyState = 0;
   public status = 0;
@@ -77,6 +80,7 @@ export class XHRProxy implements XMLHttpRequest {
   private _init(){
     this._onError = this._onError.bind(this);
     this._createRequestCallback = this._createRequestCallback.bind(this);
+    this._loadLoadingProgress = this._loadLoadingProgress.bind(this);
   
     const addEventListener = <K extends keyof XMLHttpRequestEventMap>(type: K) => {
       this.addEventListener(type, this._onError);
@@ -118,6 +122,9 @@ export class XHRProxy implements XMLHttpRequest {
       
       this._runUntil(realReadyState);
     };
+    
+    this._xhr.addEventListener("progress", this._loadLoadingProgress);
+    this._xhr.addEventListener("load", this._loadLoadingProgress);
   }
   
   public addEventListener<K extends keyof XMLHttpRequestEventMap>(
@@ -181,6 +188,11 @@ export class XHRProxy implements XMLHttpRequest {
     }
     
     for(let i=0;i<listeners.length;i++){
+      // If `event.stopImmediatePropagation` is called, stop calling listeners any more.
+      if(event.cancelBubble){
+        break;
+      }
+      
       const l = listeners[i];
       l.call(this, event);
     }
@@ -256,7 +268,7 @@ export class XHRProxy implements XMLHttpRequest {
       }
       this._xhr.withCredentials = this.withCredentials;
     
-      this.dispatchEvent(makeProgressEvent("loadstart", 0));
+      this.dispatchEvent(makeProgressEvent("loadstart", this, false, false, 0, 0));
     
       const headerMap = this._request.headers;
       const headerNames = headerMap ? Object.keys(headerMap) : [];
@@ -379,7 +391,7 @@ export class XHRProxy implements XMLHttpRequest {
       this._xhr.abort();
     }
     else{
-      this.dispatchEvent(makeProgressEvent("abort", 0));
+      this.dispatchEvent(makeProgressEvent("abort", this, isIE("=", 11), true, 0, 0));
     }
     
     this._transitioning = false;
@@ -450,7 +462,7 @@ export class XHRProxy implements XMLHttpRequest {
         return;
       }
       
-      this.dispatchEvent(makeProgressEvent("loadstart", 0));
+      this.dispatchEvent(makeProgressEvent("loadstart", this, false, false, 0, 0));
   
       this._response = {
         ...this._response,
@@ -551,6 +563,13 @@ export class XHRProxy implements XMLHttpRequest {
     }
   }
   
+  
+  private _loadLoadingProgress(e: ProgressEvent<XMLHttpRequestEventTarget>){
+    this._lengthComputable = e.lengthComputable;
+    this._loaded = e.loaded;
+    this._total = e.total;
+  }
+  
   private _syncHeaderFromVirtualResponse(){
     this.status = this._response.status;
     this.statusText = this._response.statusText;
@@ -584,7 +603,7 @@ export class XHRProxy implements XMLHttpRequest {
   }
   
   private _triggerStateAction(){
-    const readyStateChangeEvent = createEvent("readystatechange");
+    const readyStateChangeEvent = createXHREvent("readystatechange", this, isIE("=", 11));
     
     if(this._readyState === this.OPENED){
       this.dispatchEvent(readyStateChangeEvent);
@@ -614,9 +633,9 @@ export class XHRProxy implements XMLHttpRequest {
   
         const emitLoadEvent = () => {
           if(!this._hasError){
-            this.dispatchEvent(makeProgressEvent("load", 0));
+            this.dispatchEvent(makeProgressEvent("load", this, false, this._lengthComputable, this._loaded, this._total));
           }
-          this.dispatchEvent(makeProgressEvent("loadend", 0));
+          this.dispatchEvent(makeProgressEvent("loadend", this, false, this._lengthComputable, this._loaded, this._total));
         };
   
         if(this._request.async === false){
