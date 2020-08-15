@@ -10,7 +10,7 @@ Hook ajax request and/or response. Modify header, body, status, credentials, etc
 - Works in modern browsers and **IE9/10/11**.
 
 ## Doc
-https://hinaser.github.io/xspy/
+<https://hinaser.github.io/xspy/>
 
 ## Browser Support
 Tested with IE9+, Firefox, Chrome, Edge.
@@ -42,7 +42,7 @@ import xspy from "xspy";
 
 ## Example
 
-#### Add Authorization header if it doesn't exist on request header.
+### Add Authorization header if it doesn't exist on request header
 
 ```js
 xspy.onRequest((req) => {
@@ -52,7 +52,7 @@ xspy.onRequest((req) => {
 });
 ```
 
-#### Return fake API response without sending actual ajax request.
+### Return fake API response without sending actual ajax request
 ```js
 xspy.onRequest((req, callback) => {
   const fakeResponse = {
@@ -64,7 +64,7 @@ xspy.onRequest((req, callback) => {
 });
 ```
 
-#### Log every response headers to console.
+### Log every response headers to console
 ```js
 xspy.onResponse((req, res) => {
   console.log(res.url, res.status, res.headers);
@@ -74,9 +74,9 @@ xspy.onResponse((req, res) => {
 ## API
 
 ### `xspy.onRequest(handler, [n])`
-- `handler`: (request, [callback]) => void
+- `handler`: (request, \[callback]) => void
   - `request`: Request
-  - `callback`: ([response]) => void
+  - `callback`: (\[response]) => void
     - `response`: Response
 - `n`: number
 
@@ -96,7 +96,7 @@ If you run `callback(res)` with a fake response object, it immediately returns t
 finishes. In this case, real request never flies to any external network.
 
 ### `xspy.onResponse(handler, [n])`
-- `handler`: (request, response, [callback]) => void
+- `handler`: (request, response, \[callback]) => void
   - `request`: Request
   - `response`: Response
   - `callback`: () => void
@@ -161,4 +161,4 @@ Some properties are only available for specific `ajaxType`.
  
 ## Work inspired by
 
-https://github.com/jpillora/xhook
+<https://github.com/jpillora/xhook>
