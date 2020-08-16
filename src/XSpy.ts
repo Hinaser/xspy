@@ -256,6 +256,7 @@ export class XSpy {
    *     next(response); // after 3000ms elapses, send the response.
    *   }, 3000);
    * });
+   * ```
    *
    * @example Return response after awaited async operation
    * ```js
