@@ -73,44 +73,44 @@ xspy.onResponse((req, res) => {
 
 ## API
 
-### `xspy.onRequest(handler, [n])`
-- `handler`: (request, \[callback]) => void
+### `xspy.onRequest(listener, [n])`
+- `listener`: (request, \[callback]) => void
   - `request`: Request
   - `callback`: (\[response]) => void
     - `response`: Response
 - `n`: number
 
-Add custom request `handler` to index `n`. (handler at index `n`=0 will be called first)  
-If you do not specify `n`, it appends `handler` to the last. (Called after all previous handlers finishes.)
+Add custom request `listener` to index `n`. (listener at index `n`=0 will be called first)  
+If you do not specify `n`, it appends `listener` to the last. (Called after all previous listeners finishes.)
 
-This `handler` will be called just before web request by `window.fetch()` or `xhr.sent()` departs from browser.  
+This `listener` will be called just before web request by `window.fetch()` or `xhr.sent()` departs from browser.  
 You can modify the request object(i.e. headers, body) before it is sent. See detail for request object later.
 
-Note that when you supplies `handler` as 2 parameters function(`request` and `callback`),
-request will not be dispatched until you manually run `callback()` function in `handler`.
+Note that when you supplies `listener` as 2 parameters function(`request` and `callback`),
+request will not be dispatched until you manually run `callback()` function in `listener`.
 
 If you run `callback()` without any arguments or with non-object value like `false`, 
 request processing goes forward without generating fake response.
 
-If you run `callback(res)` with a fake response object, it immediately returns the fake response after all onRequest handlers
+If you run `callback(res)` with a fake response object, it immediately returns the fake response after all onRequest listeners
 finishes. In this case, real request never flies to any external network.
 
-### `xspy.onResponse(handler, [n])`
-- `handler`: (request, response, \[callback]) => void
+### `xspy.onResponse(listener, [n])`
+- `listener`: (request, response, \[callback]) => void
   - `request`: Request
   - `response`: Response
   - `callback`: () => void
 - `n`: number
 
-Add custom response `handler` to index `n`. (handler at index `n`=0 will be called first)  
-If you do not specify `n`, it appends `handler` to the last. (Called after all previous handlers finishes.)
+Add custom response `listener` to index `n`. (listener at index `n`=0 will be called first)  
+If you do not specify `n`, it appends `listener` to the last. (Called after all previous listeners finishes.)
 
-This `handler` will be called just before API response is available at
+This `listener` will be called just before API response is available at
 `window.fetch().then(res => ...)` or `xhr.onreadystatechange`, and so on.  
 You can modify the response object before it is available to the original requester. See detail for response object later.
 
-Note that when you supplies `handler` as 3 parameters function(`request`, `response` and `callback`),
-response will not be returned to the original requester until you manually run `callback()` function in `handler`.
+Note that when you supplies `listener` as 3 parameters function(`request`, `response` and `callback`),
+response will not be returned to the original requester until you manually run `callback()` function in `listener`.
 
 ### `xspy.enable()`
 
@@ -122,11 +122,11 @@ When enabled, `window.fetch` and `XMLHttpRequest` is replaced by extended functi
 ### `xspy.disable()`
 
 Disable spying on request/response. `window.fetch` and `XMLHttpRequest` will be set back to original ones.  
-Note that request/response handlers are not cleared and stored in memory.
+Note that request/response listeners are not cleared and stored in memory.
 
 ### `Request`
 
-Properties of `Request` object can be edited in request handler.
+Properties of `Request` object can be edited in request listener.
 Some properties are only available for specific `ajaxType`.
 
 - `ajaxType`: string - "xhr" or "fetch". Indicating whether request is dispatched from `fetch()` or `xhr.send()`.
@@ -144,7 +144,7 @@ Some properties are only available for specific `ajaxType`.
 
 ### `Response`
 
-Properties of `Response` object can be edited in response handler.
+Properties of `Response` object can be edited in response listener.
 Some properties are only available for specific `ajaxType`.
 
 - `ajaxType`: string - "xhr" or "fetch". Indicating whether response is for `fetch().then(res => ...)` or `xhr`.

@@ -1,10 +1,10 @@
 import {XSpy} from "../XSpy";
-import {FetchRequest, FetchResponse, RequestCallback, ResponseCallback, TResponse} from "../index.type";
+import {RequestByFetch, ResponseByFetch, CallbackForRequest, CallbackForResponse, Response} from "../index.type";
 import {ResponseProxy} from "./Response";
 
 class FetchProxy {
-  private _request: FetchRequest;
-  private _response: FetchResponse;
+  private _request: RequestByFetch;
+  private _response: ResponseByFetch;
   private _input?: RequestInfo;
   private _init?: RequestInit;
   
@@ -81,7 +81,7 @@ class FetchProxy {
               executeNextListener();
             });
         
-            l.call({}, this._request, userCallback as RequestCallback<"xhr"|"fetch">);
+            l.call({}, this._request, userCallback as CallbackForRequest<"xhr"|"fetch">);
             return;
           }
       
@@ -161,14 +161,14 @@ class FetchProxy {
     }));
   }
   
-  private static _createRequest(input: RequestInfo, init?: RequestInit): FetchRequest {
+  private static _createRequest(input: RequestInfo, init?: RequestInit): RequestByFetch {
     if(typeof input === "string"){
       const req = {
         ...(init||{}),
         ajaxType: "fetch",
         headers: {},
         url: input,
-      } as FetchRequest;
+      } as RequestByFetch;
       
       if(init && init.headers){
         const headers = init.headers instanceof Headers ? init.headers : new Headers(init.headers);
@@ -225,7 +225,7 @@ class FetchProxy {
         referrer: input.referrer,
         referrerPolicy: input.referrerPolicy,
         signal: input.signal,
-      } as FetchRequest;
+      } as RequestByFetch;
   
       if(headers){
         const entries = Array.from(headers.entries());
@@ -243,7 +243,7 @@ class FetchProxy {
     }
   }
   
-  private static _createResponse(): FetchResponse {
+  private static _createResponse(): ResponseByFetch {
     return {
       ajaxType: "fetch",
       status: 0,
@@ -257,14 +257,14 @@ class FetchProxy {
     };
   }
   
-  private _createRequestCallback(onCalled: () => unknown): RequestCallback<"fetch"> {
+  private _createRequestCallback(onCalled: () => unknown): CallbackForRequest<"fetch"> {
     type RequestCallbackOnlyWithDefaultFunc = {
-      (dummyResponse: FetchResponse): unknown;
-      moveToHeaderReceived?: (dummyResponse: TResponse<"fetch">) => void;
-      moveToLoading?: (dummyResponse: TResponse<"fetch">) => void;
+      (dummyResponse: ResponseByFetch): unknown;
+      moveToHeaderReceived?: (dummyResponse: Response<"fetch">) => void;
+      moveToLoading?: (dummyResponse: Response<"fetch">) => void;
     };
   
-    const cb: RequestCallbackOnlyWithDefaultFunc = (response: FetchResponse) => {
+    const cb: RequestCallbackOnlyWithDefaultFunc = (response: ResponseByFetch) => {
       if(!response || typeof response !== "object"){
         onCalled();
         return;
@@ -277,11 +277,11 @@ class FetchProxy {
     cb.moveToHeaderReceived = () => { return; };
     cb.moveToLoading = () => { return; };
     
-    return cb as RequestCallback<"fetch">;
+    return cb as CallbackForRequest<"fetch">;
   }
   
-  private _createResponseCallback(onCalled: () => unknown) : ResponseCallback<"fetch"> {
-    return (response: FetchResponse) => {
+  private _createResponseCallback(onCalled: () => unknown) : CallbackForResponse<"fetch"> {
+    return (response: ResponseByFetch) => {
       if(!response || typeof response !== "object"){
         onCalled();
         return;
