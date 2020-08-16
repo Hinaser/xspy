@@ -1,9 +1,299 @@
-<html lang="en">
+<!doctype html>
+<html class="default no-js">
 <head>
-  <meta charset="utf-8" />
-  <title>xspy</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>xspy - v0.0.2</title>
+	<meta name="description" content="Documentation for xspy - v0.0.2">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
-Preparing.
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">xspy - v0.0.2</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="globals.html">Globals</a>
+				</li>
+			</ul>
+			<h1>xspy - v0.0.2</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<a href="#xspy" id="xspy" style="color: inherit; text-decoration: none;">
+					<h1>xspy</h1>
+				</a>
+				<p><a href="https://badge.fury.io/js/xspy"><img src="https://badge.fury.io/js/xspy.svg" alt="npm version"></a> <a href="https://coveralls.io/github/Hinaser/xspy?branch=v0.0.1"><img src="https://coveralls.io/repos/github/Hinaser/xspy/badge.svg?branch=v0.0.1" alt="Coverage Status"></a> <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
+				<p>Hook ajax request and/or response. Modify header, body, status, credentials, etc in request/response</p>
+				<ul>
+					<li>Catch fetch/XMLHttpRequest request before it is sent.</li>
+					<li>Catch fetch/XMLHttpRequest response before it is available to client.</li>
+					<li>Comes with type definitions by Typescript for great developer experience.</li>
+					<li>High test coverage</li>
+					<li>Works in modern browsers and <strong>IE9/10/11</strong>.</li>
+				</ul>
+				<a href="#doc" id="doc" style="color: inherit; text-decoration: none;">
+					<h2>Doc</h2>
+				</a>
+				<p><a href="https://hinaser.github.io/xspy/">https://hinaser.github.io/xspy/</a></p>
+				<a href="#browser-support" id="browser-support" style="color: inherit; text-decoration: none;">
+					<h2>Browser Support</h2>
+				</a>
+				<p>Tested with IE9+, Firefox, Chrome, Edge.</p>
+				<p>You can test this module in your favorite browser by <code>git clone</code> this repo and <code>npm run test</code> or <code>yarn test</code> in it.</p>
+				<a href="#install" id="install" style="color: inherit; text-decoration: none;">
+					<h2>Install</h2>
+				</a>
+				<a href="#browser" id="browser" style="color: inherit; text-decoration: none;">
+					<h3>Browser</h3>
+				</a>
+				<p>Copy <code>/dist/xspy.es5.min.js</code> and load into your &lt;script&gt; tag before any fetch/XMLHttpRequest.</p>
+				<pre><code class="language-html"><span class="hljs-comment">&lt;!-- Rename `xspy.es5.min.js` as you like --&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;xspy.es5.min.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre>
+				<a href="#webpack-project" id="webpack-project" style="color: inherit; text-decoration: none;">
+					<h3>Webpack project</h3>
+				</a>
+				<pre><code>npm <span class="hljs-keyword">install </span>xspy -- <span class="hljs-keyword">OR </span>yarn <span class="hljs-keyword">add </span>xspy</code></pre>
+				<a href="#commonjs" id="commonjs" style="color: inherit; text-decoration: none;">
+					<h4>CommonJS</h4>
+				</a>
+				<pre><code class="language-js"><span class="hljs-keyword">const</span> xspy = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;xspy&quot;</span>).default;</code></pre>
+				<a href="#typescript" id="typescript" style="color: inherit; text-decoration: none;">
+					<h4>Typescript</h4>
+				</a>
+				<pre><code class="language-typescript"><span class="hljs-keyword">import</span> xspy <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;xspy&quot;</span>;</code></pre>
+				<a href="#example" id="example" style="color: inherit; text-decoration: none;">
+					<h2>Example</h2>
+				</a>
+				<a href="#add-authorization-header-if-it-doesn39t-exist-on-request-header" id="add-authorization-header-if-it-doesn39t-exist-on-request-header" style="color: inherit; text-decoration: none;">
+					<h3>Add Authorization header if it doesn&#39;t exist on request header</h3>
+				</a>
+				<pre><code class="language-js">xspy.onRequest(<span class="hljs-function">(<span class="hljs-params">req</span>) =&gt;</span> {
+  <span class="hljs-keyword">if</span>(!req.headers[<span class="hljs-string">&quot;Authorization&quot;</span>]){
+    req.headers[<span class="hljs-string">&quot;Authorization&quot;</span>] = <span class="hljs-string">&quot;bearer sakxxd0ejdalkjdalkjfajd&quot;</span>;
+  }
+});</code></pre>
+				<a href="#return-fake-api-response-without-sending-actual-ajax-request" id="return-fake-api-response-without-sending-actual-ajax-request" style="color: inherit; text-decoration: none;">
+					<h3>Return fake API response without sending actual ajax request</h3>
+				</a>
+				<pre><code class="language-js">xspy.onRequest(<span class="hljs-function">(<span class="hljs-params">req, callback</span>) =&gt;</span> {
+  <span class="hljs-keyword">const</span> fakeResponse = {
+    <span class="hljs-attr">status</span>: <span class="hljs-number">200</span>,
+    <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>,
+    <span class="hljs-attr">body</span>: <span class="hljs-string">&quot;This is fake response!&quot;</span>,
+  };
+  callback(fakeResponse);
+});</code></pre>
+				<a href="#log-every-response-headers-to-console" id="log-every-response-headers-to-console" style="color: inherit; text-decoration: none;">
+					<h3>Log every response headers to console</h3>
+				</a>
+				<pre><code class="language-js">xspy.onResponse(<span class="hljs-function">(<span class="hljs-params">req, res</span>) =&gt;</span> {
+  <span class="hljs-built_in">console</span>.log(res.url, res.status, res.headers);
+});</code></pre>
+				<a href="#api" id="api" style="color: inherit; text-decoration: none;">
+					<h2>API</h2>
+				</a>
+				<a href="#xspyonrequestlistener-n" id="xspyonrequestlistener-n" style="color: inherit; text-decoration: none;">
+					<h3><code>xspy.onRequest(listener, [n])</code></h3>
+				</a>
+				<ul>
+					<li><code>listener</code>: (request, [callback]) =&gt; void<ul>
+							<li><code>request</code>: Request</li>
+							<li><code>callback</code>: ([response]) =&gt; void<ul>
+									<li><code>response</code>: Response</li>
+								</ul>
+							</li>
+						</ul>
+					</li>
+					<li><code>n</code>: number</li>
+				</ul>
+				<p>Add custom request <code>listener</code> to index <code>n</code>. (listener at index <code>n</code>=0 will be called first)<br>If you do not specify <code>n</code>, it appends <code>listener</code> to the last. (Called after all previous listeners finishes.)</p>
+				<p>This <code>listener</code> will be called just before web request by <code>window.fetch()</code> or <code>xhr.sent()</code> departs from browser.<br>You can modify the request object(i.e. headers, body) before it is sent. See detail for request object later.</p>
+				<p>Note that when you supplies <code>listener</code> as 2 parameters function(<code>request</code> and <code>callback</code>),
+				request will not be dispatched until you manually run <code>callback()</code> function in <code>listener</code>.</p>
+				<p>If you run <code>callback()</code> without any arguments or with non-object value like <code>false</code>,
+				request processing goes forward without generating fake response.</p>
+				<p>If you run <code>callback(res)</code> with a fake response object, it immediately returns the fake response after all onRequest listeners
+				finishes. In this case, real request never flies to any external network.</p>
+				<a href="#xspyonresponselistener-n" id="xspyonresponselistener-n" style="color: inherit; text-decoration: none;">
+					<h3><code>xspy.onResponse(listener, [n])</code></h3>
+				</a>
+				<ul>
+					<li><code>listener</code>: (request, response, [callback]) =&gt; void<ul>
+							<li><code>request</code>: Request</li>
+							<li><code>response</code>: Response</li>
+							<li><code>callback</code>: () =&gt; void</li>
+						</ul>
+					</li>
+					<li><code>n</code>: number</li>
+				</ul>
+				<p>Add custom response <code>listener</code> to index <code>n</code>. (listener at index <code>n</code>=0 will be called first)<br>If you do not specify <code>n</code>, it appends <code>listener</code> to the last. (Called after all previous listeners finishes.)</p>
+				<p>This <code>listener</code> will be called just before API response is available at
+				<code>window.fetch().then(res =&gt; ...)</code> or <code>xhr.onreadystatechange</code>, and so on.<br>You can modify the response object before it is available to the original requester. See detail for response object later.</p>
+				<p>Note that when you supplies <code>listener</code> as 3 parameters function(<code>request</code>, <code>response</code> and <code>callback</code>),
+				response will not be returned to the original requester until you manually run <code>callback()</code> function in <code>listener</code>.</p>
+				<a href="#xspyenable" id="xspyenable" style="color: inherit; text-decoration: none;">
+					<h3><code>xspy.enable()</code></h3>
+				</a>
+				<p>*<em>When xspy module is loaded from &lt;script&gt; tag or import/require, it is enabled by default.</em></p>
+				<p>Enable spying on request/response by <code>window.fetch()</code> and/or <code>xhr.send()</code>.
+				When enabled, <code>window.fetch</code> and <code>XMLHttpRequest</code> is replaced by extended function/object to intercept communications.</p>
+				<a href="#xspydisable" id="xspydisable" style="color: inherit; text-decoration: none;">
+					<h3><code>xspy.disable()</code></h3>
+				</a>
+				<p>Disable spying on request/response. <code>window.fetch</code> and <code>XMLHttpRequest</code> will be set back to original ones.<br>Note that request/response listeners are not cleared and stored in memory.</p>
+				<a href="#request" id="request" style="color: inherit; text-decoration: none;">
+					<h3><code>Request</code></h3>
+				</a>
+				<p>Properties of <code>Request</code> object can be edited in request listener.
+				Some properties are only available for specific <code>ajaxType</code>.</p>
+				<ul>
+					<li><code>ajaxType</code>: string - &quot;xhr&quot; or &quot;fetch&quot;. Indicating whether request is dispatched from <code>fetch()</code> or <code>xhr.send()</code>.</li>
+					<li><code>method</code>: string - Request method like <code>GET</code>/<code>POST</code>/<code>PUT</code>/<code>DELETE</code>/...</li>
+					<li><code>url</code>: string - Request url.</li>
+					<li><code>timeout</code>: number - Ignored if <code>ajaxType</code> is <code>fetch</code></li>
+					<li><code>headers</code>: Object - i.e. <code>{&quot;Authorization&quot;: &quot;auth-strings&quot;, &quot;content-type&quot;: &quot;application/json&quot;}</code></li>
+					<li><code>body</code>: Various types - Request body. It can be undefined if original requester does not set request body.</li>
+				</ul>
+				<p><strong>And if <code>ajaxType</code> is <code>xhr</code></strong></p>
+				<ul>
+					<li><code>async</code> <code>username</code> <code>password</code> <code>responseType</code> <code>withCredentials</code> <code>upload</code></li>
+				</ul>
+				<p><strong>And else if <code>ajaxType</code> is <code>fetch</code></strong></p>
+				<ul>
+					<li><code>cache</code> <code>credentials</code> <code>integrity</code> <code>keepalive</code> <code>mode</code> <code>redirect</code> <code>referrer</code> <code>referrerPolicy</code> <code>signal</code></li>
+				</ul>
+				<a href="#response" id="response" style="color: inherit; text-decoration: none;">
+					<h3><code>Response</code></h3>
+				</a>
+				<p>Properties of <code>Response</code> object can be edited in response listener.
+				Some properties are only available for specific <code>ajaxType</code>.</p>
+				<ul>
+					<li><code>ajaxType</code>: string - &quot;xhr&quot; or &quot;fetch&quot;. Indicating whether response is for <code>fetch().then(res =&gt; ...)</code> or <code>xhr</code>.</li>
+					<li><code>status</code>: number</li>
+					<li><code>statusText</code>: string</li>
+					<li><code>headers</code>: Object</li>
+					<li><code>body?</code>: Various types - Response body</li>
+				</ul>
+				<p><strong>And if <code>ajaxType</code> is <code>xhr</code></strong></p>
+				<ul>
+					<li><code>responseType</code> <code>response</code> <code>responseText</code> <code>responseXML</code> <code>responseURL</code></li>
+				</ul>
+				<p><strong>And else if <code>ajaxType</code> is <code>fetch</code></strong></p>
+				<ul>
+					<li><code>ok</code> <code>redirected</code> <code>type</code> <code>url</code></li>
+				</ul>
+				<a href="#work-inspired-by" id="work-inspired-by" style="color: inherit; text-decoration: none;">
+					<h2>Work inspired by</h2>
+				</a>
+				<p><a href="https://github.com/jpillora/xhook">https://github.com/jpillora/xhook</a></p>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="globals  ">
+						<a href="globals.html"><em>Globals</em></a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-class">
+						<a href="classes/xspy.html" class="tsd-kind-icon">XSpy</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-has-type-parameter tsd-is-external">
+						<a href="interfaces/request.html" class="tsd-kind-icon">Request</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-is-external">
+						<a href="interfaces/requestbyfetch.html" class="tsd-kind-icon">Request<wbr>ByFetch</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-is-external">
+						<a href="interfaces/requestbyxhr.html" class="tsd-kind-icon">Request<wbr>ByXHR</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-has-type-parameter tsd-is-external">
+						<a href="interfaces/response.html" class="tsd-kind-icon">Response</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-is-external">
+						<a href="interfaces/responsebyfetch.html" class="tsd-kind-icon">Response<wbr>ByFetch</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-is-external">
+						<a href="interfaces/responsebyxhr.html" class="tsd-kind-icon">Response<wbr>ByXHR</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter tsd-is-external">
+						<a href="globals.html#callbackforrequest" class="tsd-kind-icon">Callback<wbr>For<wbr>Request</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter tsd-is-external">
+						<a href="globals.html#callbackforresponse" class="tsd-kind-icon">Callback<wbr>For<wbr>Response</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter tsd-is-external">
+						<a href="globals.html#listenerforrequest" class="tsd-kind-icon">Listener<wbr>For<wbr>Request</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter tsd-is-external">
+						<a href="globals.html#listenerforresponse" class="tsd-kind-icon">Listener<wbr>For<wbr>Response</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
 </body>
 </html>

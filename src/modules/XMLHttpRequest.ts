@@ -1,6 +1,6 @@
-import {RequestCallback, ResponseCallback, XhrRequest, XhrResponse} from "../index.type";
+import {CallbackForRequest, CallbackForResponse, RequestByXHR, ResponseByXHR} from "../index.type";
 import {createXHREvent, makeProgressEvent, toHeaderMap, toHeaderString, isIE} from "../index.lib";
-import {Proxy} from "../Proxy";
+import {XSpy} from "../XSpy";
 
 export class XHRProxy implements XMLHttpRequest {
   static readonly UNSENT: number = 0;
@@ -15,14 +15,14 @@ export class XHRProxy implements XMLHttpRequest {
   public readonly LOADING: number = 3;
   public readonly DONE: number = 4;
   
-  private _xhr = new Proxy.OriginalXHR();
+  private _xhr = new XSpy.OriginalXHR();
   private _listeners: {[type: string]: Array<(this: XMLHttpRequest, ev: Event|ProgressEvent<XMLHttpRequestEventTarget>) => unknown>} = {};
   private _readyState: number = 0;
   private _isAborted: boolean = false;
   private _hasError: boolean|null = null;
   private _transitioning: boolean|null = null;
-  private _request: XhrRequest = XHRProxy._createRequest(this._xhr);
-  private _response: XhrResponse = XHRProxy._createResponse();
+  private _request: RequestByXHR = XHRProxy._createRequest(this._xhr);
+  private _response: ResponseByXHR = XHRProxy._createResponse();
   private _responseText: string = "";
   private _responseXML: Document | null = null;
   private _lengthComputable: boolean = false;
@@ -281,7 +281,7 @@ export class XHRProxy implements XMLHttpRequest {
       this._xhr.send(this._request.body);
     };
   
-    const listeners = Proxy.getRequestListeners();
+    const listeners = XSpy.getRequestListeners();
     let listenerPointer = 0;
   
     const executeNextListener = (): unknown => {
@@ -299,7 +299,7 @@ export class XHRProxy implements XMLHttpRequest {
             executeNextListener();
           });
         
-          l.call(this, this._request, userCallback as RequestCallback<"xhr"|"fetch">);
+          l.call(this, this._request, userCallback as CallbackForRequest<"xhr"|"fetch">);
           return;
         }
       
@@ -397,7 +397,7 @@ export class XHRProxy implements XMLHttpRequest {
     this._transitioning = false;
   }
   
-  private static _createRequest(xhr: XMLHttpRequest): XhrRequest {
+  private static _createRequest(xhr: XMLHttpRequest): RequestByXHR {
     return {
       ajaxType: "xhr" as const,
       headers: {},
@@ -449,14 +449,14 @@ export class XHRProxy implements XMLHttpRequest {
     addEventListeners("progress");
   }
   
-  private _createRequestCallback(onCalled: () => unknown) : RequestCallback<"xhr"> {
+  private _createRequestCallback(onCalled: () => unknown) : CallbackForRequest<"xhr"> {
     type RequestCallbackOnlyWithDefaultFunc = {
-      (dummyResponse: XhrResponse): unknown;
-      moveToHeaderReceived?: (dummyResponse: XhrResponse) => void;
-      moveToLoading?: (dummyResponse: XhrResponse) => void;
+      (dummyResponse: ResponseByXHR): unknown;
+      moveToHeaderReceived?: (dummyResponse: ResponseByXHR) => void;
+      moveToLoading?: (dummyResponse: ResponseByXHR) => void;
     };
     
-    const cb: RequestCallbackOnlyWithDefaultFunc = (response: XhrResponse) => {
+    const cb: RequestCallbackOnlyWithDefaultFunc = (response: ResponseByXHR) => {
       if(!response || typeof response !== "object"){
         onCalled();
         return;
@@ -474,7 +474,7 @@ export class XHRProxy implements XMLHttpRequest {
       onCalled();
     };
     
-    const moveToHeaderReceived = (response: XhrResponse) => {
+    const moveToHeaderReceived = (response: ResponseByXHR) => {
       if(this.readyState >= this.HEADERS_RECEIVED){
         return;
       }
@@ -485,7 +485,7 @@ export class XHRProxy implements XMLHttpRequest {
       this._runUntil(this.HEADERS_RECEIVED);
     };
     
-    const moveToLoading = (response: XhrResponse) => {
+    const moveToLoading = (response: ResponseByXHR) => {
       if(this.readyState >= this.LOADING){
         return;
       }
@@ -499,11 +499,11 @@ export class XHRProxy implements XMLHttpRequest {
     cb.moveToHeaderReceived = moveToHeaderReceived;
     cb.moveToLoading = moveToLoading;
     
-    return cb as RequestCallback<"xhr">;
+    return cb as CallbackForRequest<"xhr">;
   }
   
-  private _createResponseCallback(onCalled: () => unknown) : ResponseCallback<"xhr"> {
-    return (response: XhrResponse) => {
+  private _createResponseCallback(onCalled: () => unknown) : CallbackForResponse<"xhr"> {
+    return (response: ResponseByXHR) => {
       if(!response || typeof response !== "object"){
         onCalled();
         return;
@@ -646,7 +646,7 @@ export class XHRProxy implements XMLHttpRequest {
         }
       };
   
-      const listeners = Proxy.getResponseListeners();
+      const listeners = XSpy.getResponseListeners();
       let listenerPointer = 0;
   
       const executeNextListener = (): unknown => {
