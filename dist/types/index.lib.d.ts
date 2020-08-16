@@ -8,4 +8,4 @@ export declare const toHeaderString: (headerMap: {
     [name: string]: string;
 }) => string;
 export declare const createXHREvent: (type: string, xhr: XMLHttpRequest, bubbles: boolean) => Event;
-export declare const makeProgressEvent: (type: string, xhr: XMLHttpRequest, bubbles: boolean, lengthComputable: boolean | undefined, loaded: number, total?: number) => ProgressEventExt<XMLHttpRequestEventTarget>;
+export declare const makeProgressEvent: (type: string, xhr: XMLHttpRequest, bubbles: boolean, lengthComputable: boolean, loaded: number, total: number) => ProgressEventExt<XMLHttpRequestEventTarget>;
