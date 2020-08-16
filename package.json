@@ -43,7 +43,7 @@
     "coverage:report": "nyc report --reporter=lcov --reporter=text --temp-dir ./test/coverage --report-dir ./test/coverage && yarn fixLcov",
     "fixLcov": "node test/bin/fixLcovInfo.js",
     "instrument": "nyc instrument ./dist/xspy.js > ./test/dist/xspy.js",
-    "tsdoc": "typedoc src/XSpy.ts --mode file --excludePrivate --excludeProtected --excludeNotExported --out docs --includeVersion"
+    "tsdoc": "typedoc src/XSpy.ts --mode file --excludePrivate --excludeProtected --excludeNotExported --out docs --includeVersion --gaID UA-91245492-8"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^3.8.0",
