@@ -1,10 +1,3 @@
-import {Proxy} from "./Proxy";
-
-export interface WindowEx extends Window {
-  XMLHttpRequest: new() => XMLHttpRequest;
-  xspy: typeof Proxy;
-}
-
 export type EventType = "request" | "response";
 export type RequestCallback<T extends "xhr"|"fetch"> = {
   (dummyResponse: TResponse<T>): unknown;

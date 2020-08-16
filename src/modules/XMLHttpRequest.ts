@@ -1,6 +1,6 @@
 import {RequestCallback, ResponseCallback, XhrRequest, XhrResponse} from "../index.type";
 import {createXHREvent, makeProgressEvent, toHeaderMap, toHeaderString, isIE} from "../index.lib";
-import {Proxy} from "../Proxy";
+import {XSpy} from "../XSpy";
 
 export class XHRProxy implements XMLHttpRequest {
   static readonly UNSENT: number = 0;
@@ -15,7 +15,7 @@ export class XHRProxy implements XMLHttpRequest {
   public readonly LOADING: number = 3;
   public readonly DONE: number = 4;
   
-  private _xhr = new Proxy.OriginalXHR();
+  private _xhr = new XSpy.OriginalXHR();
   private _listeners: {[type: string]: Array<(this: XMLHttpRequest, ev: Event|ProgressEvent<XMLHttpRequestEventTarget>) => unknown>} = {};
   private _readyState: number = 0;
   private _isAborted: boolean = false;
@@ -281,7 +281,7 @@ export class XHRProxy implements XMLHttpRequest {
       this._xhr.send(this._request.body);
     };
   
-    const listeners = Proxy.getRequestListeners();
+    const listeners = XSpy.getRequestListeners();
     let listenerPointer = 0;
   
     const executeNextListener = (): unknown => {
@@ -646,7 +646,7 @@ export class XHRProxy implements XMLHttpRequest {
         }
       };
   
-      const listeners = Proxy.getResponseListeners();
+      const listeners = XSpy.getResponseListeners();
       let listenerPointer = 0;
   
       const executeNextListener = (): unknown => {

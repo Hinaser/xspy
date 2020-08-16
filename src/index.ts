@@ -1,12 +1,9 @@
-import {Proxy} from "./Proxy";
-import {WindowEx} from "./index.type";
+import {XSpy as xspy} from "./XSpy";
 import {XHRProxy} from "./modules/XMLHttpRequest";
 import {fetchProxy} from "./modules/fetch";
 
-declare let window: WindowEx;
+xspy.setXMLHttpRequest(XHRProxy);
+xspy.setFetch(fetchProxy);
+xspy.enable();
 
-Proxy.setXMLHttpRequest(XHRProxy);
-Proxy.setFetch(fetchProxy);
-Proxy.enable();
-
-export default Proxy;
+export default xspy;

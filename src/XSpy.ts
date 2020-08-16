@@ -1,52 +1,65 @@
-import {EventType, RequestHandler, ResponseHandler, WindowEx} from "./index.type";
+import {EventType, RequestHandler, ResponseHandler} from "./index.type";
+
+interface WindowEx extends Window {
+  XMLHttpRequest: new() => XMLHttpRequest;
+  xspy: typeof XSpy;
+}
 
 declare let window: WindowEx;
 
-export class Proxy {
+
+
+export class XSpy {
   private static _reqListeners: Array<RequestHandler<"xhr"|"fetch">> = [];
   private static _resListeners: Array<ResponseHandler<"xhr"|"fetch">> = [];
   private static _customXHR = window.XMLHttpRequest;
   private static _customFetch = window.fetch;
+  
+  /**
+   * Original prototype of XMLHttpRequest.
+   * 
+   */
   public static readonly OriginalXHR = window.XMLHttpRequest;
+  
   /* Only IE does not implement `window.fetch`. Exclude from coverage counting. */
   /* istanbul ignore next */
   public static readonly OriginalFetch = (window.fetch || function fetch(){ return; }).bind(window);
   
   public static enable() {
-    window.XMLHttpRequest = Proxy._customXHR;
+    window.XMLHttpRequest = XSpy._customXHR;
     /* istanbul ignore else */
     if(window.fetch){
-      window.fetch = Proxy._customFetch;
+      window.fetch = XSpy._customFetch;
     }
   }
   
   public static disable() {
-    window.XMLHttpRequest = Proxy.OriginalXHR;
+    window.XMLHttpRequest = XSpy.OriginalXHR;
     /* istanbul ignore else */
-    if(window.fetch && Proxy.OriginalFetch){
-      window.fetch = Proxy.OriginalFetch;
+    if(window.fetch && XSpy.OriginalFetch){
+      window.fetch = XSpy.OriginalFetch;
     }
   }
   
   public static isEnabled(){
-    return window.XMLHttpRequest === Proxy._customXHR;
+    return window.XMLHttpRequest === XSpy._customXHR;
   }
   
   public static setXMLHttpRequest(m: typeof window["XMLHttpRequest"]){
-    Proxy._customXHR = m;
+    XSpy._customXHR = m;
   }
   
   public static setFetch(m: typeof window["fetch"]){
-    Proxy._customFetch = m;
+    XSpy._customFetch = m;
   }
   
   public static getRequestListeners() {
-    const listeners = Proxy._reqListeners;
+    const listeners = XSpy._reqListeners;
     return listeners.slice();
   }
   
   public static getResponseListeners() {
-    const listeners = Proxy._resListeners;
+    const listeners = XSpy._resListeners;
     return listeners.slice();
   }
   
@@ -85,8 +98,8 @@ export class Proxy {
   }
   
   public static clearAll() {
-    Proxy.clearRequestHandler();
-    Proxy.clearResponseHandler();
+    XSpy.clearRequestHandler();
+    XSpy.clearResponseHandler();
   }
   
   public static clearRequestHandler() {

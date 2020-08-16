@@ -1,4 +1,4 @@
-import {Proxy} from "../Proxy";
+import {XSpy} from "../XSpy";
 import {FetchRequest, FetchResponse, RequestCallback, ResponseCallback, TResponse} from "../index.type";
 import {ResponseProxy} from "./Response";
 
@@ -36,7 +36,7 @@ class FetchProxy {
           return;
         }
         
-        Proxy.OriginalFetch(this._request.url, this._request).then(response => {
+        XSpy.OriginalFetch(this._request.url, this._request).then(response => {
           const headers: Record<string, string> = {};
           for(const key of response.headers.keys()){
             const value = response.headers.get(key)
@@ -63,7 +63,7 @@ class FetchProxy {
         });
       };
   
-      const requestListeners = Proxy.getRequestListeners();
+      const requestListeners = XSpy.getRequestListeners();
       let listenerPointer = 0;
   
       const executeNextListener = (): unknown => {
@@ -119,7 +119,7 @@ class FetchProxy {
         resolve(res);
       };
   
-      const responseListeners = Proxy.getResponseListeners();
+      const responseListeners = XSpy.getResponseListeners();
       let listenerPointer = 0;
   
       const executeNextListener = (): unknown => {
