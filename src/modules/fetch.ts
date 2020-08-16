@@ -1,5 +1,5 @@
 import {XSpy} from "../XSpy";
-import {RequestByFetch, ResponseByFetch, CallbackForRequest, CallbackForResponse, Response} from "../index.type";
+import {RequestByFetch, ResponseByFetch, CallbackForRequest, CallbackForResponse, Response as TResponse} from "../index.type";
 import {ResponseProxy} from "./Response";
 
 class FetchProxy {
@@ -260,8 +260,8 @@ class FetchProxy {
   private _createRequestCallback(onCalled: () => unknown): CallbackForRequest<"fetch"> {
     type RequestCallbackOnlyWithDefaultFunc = {
       (dummyResponse: ResponseByFetch): unknown;
-      moveToHeaderReceived?: (dummyResponse: Response<"fetch">) => void;
-      moveToLoading?: (dummyResponse: Response<"fetch">) => void;
+      moveToHeaderReceived?: (dummyResponse: TResponse<"fetch">) => void;
+      moveToLoading?: (dummyResponse: TResponse<"fetch">) => void;
     };
   
     const cb: RequestCallbackOnlyWithDefaultFunc = (response: ResponseByFetch) => {
