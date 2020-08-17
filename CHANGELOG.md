@@ -2,6 +2,14 @@
 
 <!-- ## [Unreleased] -->
 
+## [0.0.3] - 2020-08-17
+
+Only jsdoc and documentation improvements.
+
+### Changed
+- Added jsdoc annotations to all public APIs. Type hints/completions is now more descriptive.
+- Changed internal class name.
+
 ## [0.0.2] - 2020-08-15
 
 ### Changed
@@ -35,6 +43,7 @@
 - lcov.info path format.  
   \* Changed windows style path separator to UNIX style as coveralls cannot parse windows style path separator.
   
-[Unreleased]: https://github.com/Hinaser/xspy/compare/v0.0.2...v0.0.3
+<!-- [Unreleased]: https://github.com/Hinaser/xspy/compare/v0.0.3...v0.0.4 -->
+[0.0.3]: https://github.com/Hinaser/xspy/releases/tag/v0.0.3
 [0.0.2]: https://github.com/Hinaser/xspy/releases/tag/v0.0.2
 [0.0.1]: https://github.com/Hinaser/xspy/releases/tag/v0.0.1
