@@ -161,7 +161,7 @@ export declare type ListenerForRequest<T extends "xhr" | "fetch"> = (this: T ext
  * });
  * ```
  */
-export declare type CallbackForResponse<T extends "xhr" | "fetch"> = (modifiedResponse: T extends "xhr" ? ResponseByXHR : ResponseByFetch) => unknown;
+export declare type CallbackForResponse<T extends "xhr" | "fetch"> = (modifiedResponse?: T extends "xhr" ? ResponseByXHR : ResponseByFetch) => unknown;
 /**
  * Listen on XHR/fetch response returned from a server to modify/view response as you like.
  * This listener behaves differently when defined as 2 parameter function or 3 parameters function.

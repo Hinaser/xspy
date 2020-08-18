@@ -503,7 +503,7 @@ export class XHRProxy implements XMLHttpRequest {
   }
   
   private _createResponseCallback(onCalled: () => unknown) : CallbackForResponse<"xhr"> {
-    return (response: ResponseByXHR) => {
+    return (response?: ResponseByXHR) => {
       if(!response || typeof response !== "object"){
         onCalled();
         return;

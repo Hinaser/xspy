@@ -168,7 +168,7 @@ export type ListenerForRequest<T extends "xhr" | "fetch"> = (
  * ```
  */
 export type CallbackForResponse<T extends "xhr" | "fetch">
-  = (modifiedResponse: T extends "xhr" ? ResponseByXHR : ResponseByFetch) => unknown;
+  = (modifiedResponse?: T extends "xhr" ? ResponseByXHR : ResponseByFetch) => unknown;
 
 /**
  * Listen on XHR/fetch response returned from a server to modify/view response as you like.

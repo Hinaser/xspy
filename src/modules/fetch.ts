@@ -270,7 +270,10 @@ class FetchProxy {
         return;
       }
   
-      this._response = response;
+      this._response = {
+        ...this._response,
+        ...response,
+      };
       onCalled();
     };
     
@@ -281,14 +284,16 @@ class FetchProxy {
   }
   
   private _createResponseCallback(onCalled: () => unknown) : CallbackForResponse<"fetch"> {
-    return (response: ResponseByFetch) => {
+    return (response?: ResponseByFetch) => {
       if(!response || typeof response !== "object"){
         onCalled();
         return;
       }
-      
-      this._response = response;
-      
+  
+      this._response = {
+        ...this._response,
+        ...response,
+      };
       onCalled();
     };
   }
