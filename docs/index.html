@@ -65,7 +65,7 @@
 				<a href="#xspy" id="xspy" style="color: inherit; text-decoration: none;">
 					<h1>xspy</h1>
 				</a>
-				<p><a href="https://badge.fury.io/js/xspy"><img src="https://badge.fury.io/js/xspy.svg" alt="npm version"></a> <a href="https://coveralls.io/github/Hinaser/xspy?branch=v0.0.1"><img src="https://coveralls.io/repos/github/Hinaser/xspy/badge.svg?branch=v0.0.1" alt="Coverage Status"></a> <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
+				<p><a href="https://badge.fury.io/js/xspy"><img src="https://badge.fury.io/js/xspy.svg" alt="npm version"></a> <a href="https://coveralls.io/github/Hinaser/xspy?branch=master"><img src="https://coveralls.io/repos/github/Hinaser/xspy/badge.svg?branch=master" alt="Coverage Status"></a> <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
 				<p>Hook ajax request and/or response. Modify header, body, status, credentials, etc in request/response</p>
 				<ul>
 					<li>Catch fetch/XMLHttpRequest request before it is sent.</li>
@@ -118,13 +118,10 @@
 				<a href="#return-fake-api-response-without-sending-actual-ajax-request" id="return-fake-api-response-without-sending-actual-ajax-request" style="color: inherit; text-decoration: none;">
 					<h3>Return fake API response without sending actual ajax request</h3>
 				</a>
-				<pre><code class="language-js">xspy.onRequest(<span class="hljs-function">(<span class="hljs-params">req, callback</span>) =&gt;</span> {
-  <span class="hljs-keyword">const</span> fakeResponse = {
-    <span class="hljs-attr">status</span>: <span class="hljs-number">200</span>,
-    <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>,
-    <span class="hljs-attr">body</span>: <span class="hljs-string">&quot;This is fake response!&quot;</span>,
-  };
-  callback(fakeResponse);
+				<pre><code class="language-js">xspy.onRequest(<span class="hljs-keyword">async</span> (request, sendResponse) =&gt; {
+  <span class="hljs-keyword">var</span> result = <span class="hljs-keyword">await</span> someAsyncOperation();
+  <span class="hljs-keyword">var</span> response = {...};
+  sendResponse(response);
 });</code></pre>
 				<a href="#log-every-response-headers-to-console" id="log-every-response-headers-to-console" style="color: inherit; text-decoration: none;">
 					<h3>Log every response headers to console</h3>
@@ -164,7 +161,10 @@
 					<li><code>listener</code>: (request, response, [callback]) =&gt; void<ul>
 							<li><code>request</code>: Request</li>
 							<li><code>response</code>: Response</li>
-							<li><code>callback</code>: () =&gt; void</li>
+							<li><code>callback</code>: ([response]) =&gt; void<ul>
+									<li><code>response</code>: Response</li>
+								</ul>
+							</li>
 						</ul>
 					</li>
 					<li><code>n</code>: number</li>
@@ -174,6 +174,7 @@
 				<code>window.fetch().then(res =&gt; ...)</code> or <code>xhr.onreadystatechange</code>, and so on.<br>You can modify the response object before it is available to the original requester. See detail for response object later.</p>
 				<p>Note that when you supplies <code>listener</code> as 3 parameters function(<code>request</code>, <code>response</code> and <code>callback</code>),
 				response will not be returned to the original requester until you manually run <code>callback()</code> function in <code>listener</code>.</p>
+				<p>If you supply <code>response</code> to <code>callback</code>, supplied response will be provided to user scripts.</p>
 				<a href="#xspyenable" id="xspyenable" style="color: inherit; text-decoration: none;">
 					<h3><code>xspy.enable()</code></h3>
 				</a>
