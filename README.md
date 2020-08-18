@@ -1,5 +1,5 @@
 # xspy
-[![npm version](https://badge.fury.io/js/xspy.svg)](https://badge.fury.io/js/xspy) [![Coverage Status](https://coveralls.io/repos/github/Hinaser/xspy/badge.svg?branch=v0.0.1)](https://coveralls.io/github/Hinaser/xspy?branch=v0.0.1) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![npm version](https://badge.fury.io/js/xspy.svg)](https://badge.fury.io/js/xspy) [![Coverage Status](https://coveralls.io/repos/github/Hinaser/xspy/badge.svg?branch=master)](https://coveralls.io/github/Hinaser/xspy?branch=master) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Hook ajax request and/or response. Modify header, body, status, credentials, etc in request/response
 
@@ -54,13 +54,10 @@ xspy.onRequest((req) => {
 
 ### Return fake API response without sending actual ajax request
 ```js
-xspy.onRequest((req, callback) => {
-  const fakeResponse = {
-    status: 200,
-    statusText: "OK",
-    body: "This is fake response!",
-  };
-  callback(fakeResponse);
+xspy.onRequest(async (request, sendResponse) => {
+  var result = await someAsyncOperation();
+  var response = {...};
+  sendResponse(response);
 });
 ```
 
@@ -99,7 +96,8 @@ finishes. In this case, real request never flies to any external network.
 - `listener`: (request, response, \[callback]) => void
   - `request`: Request
   - `response`: Response
-  - `callback`: () => void
+  - `callback`: (\[response]) => void
+    - `response`: Response
 - `n`: number
 
 Add custom response `listener` to index `n`. (listener at index `n`=0 will be called first)  
@@ -111,6 +109,8 @@ You can modify the response object before it is available to the original reques
 
 Note that when you supplies `listener` as 3 parameters function(`request`, `response` and `callback`),
 response will not be returned to the original requester until you manually run `callback()` function in `listener`.
+
+If you supply `response` to `callback`, supplied response will be provided to user scripts.
 
 ### `xspy.enable()`
 
