@@ -99,10 +99,10 @@
 				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-has-type-parameter tsd-is-external">
 					<a name="callbackforrequest" class="tsd-anchor"></a>
 					<h3>Callback<wbr>For<wbr>Request</h3>
-					<div class="tsd-signature tsd-kind-icon">Callback<wbr>For<wbr>Request&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>moveToHeaderReceived<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><a href="interfaces/response.html" class="tsd-signature-type">Response</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">; </span>moveToLoading<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><a href="interfaces/response.html" class="tsd-signature-type">Response</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> }</span></div>
+					<div class="tsd-signature tsd-kind-icon">Callback<wbr>For<wbr>Request&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>moveToHeaderReceived<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">"headers"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"status"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"statusText"</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">never</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">; </span>moveToLoading<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">"headers"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"status"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"statusText"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"responseText"</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">never</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Hinaser/xspy/blob/f928062/src/index.type.ts#L31">src/index.type.ts:31</a></li>
+							<li>Defined in <a href="https://github.com/Hinaser/xspy/blob/004561b/src/index.type.ts#L37">src/index.type.ts:37</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -114,23 +114,29 @@
 						<dl class="tsd-comment-tags">
 							<dt>example</dt>
 							<dd><p>Return fake response step by step with simulating loading.</p>
-								<pre><code class="language-js">xspy.onRequest(<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">listenerForRequest</span>(<span class="hljs-params">request, callbackForRequest</span>)</span>{
-  <span class="hljs-keyword">if</span>(request.ajaxType === <span class="hljs-string">&quot;fetch&quot;</span>){
-    callbackForRequest.moveToHeaderReceived({
-      <span class="hljs-attr">loaded</span>: <span class="hljs-number">0</span>,
-      <span class="hljs-attr">total</span>: <span class="hljs-number">12</span>,
+								<pre><code class="language-js">xspy.onRequest(<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">listenerForRequest</span>(<span class="hljs-params">request, sendResponse</span>)</span>{
+  <span class="hljs-keyword">if</span>(request.ajaxType === <span class="hljs-string">&quot;xhr&quot;</span>){
+    sendResponse.moveToHeaderReceived({
+      <span class="hljs-attr">headers</span>: {<span class="hljs-string">&quot;content-type&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span>},
+      <span class="hljs-attr">status</span>: <span class="hljs-number">200</span>,
+      <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>,
     });
 
-    callbackForRequest.moveToLoading({
-      <span class="hljs-attr">loaded</span>: <span class="hljs-number">12</span>,
-      <span class="hljs-attr">total</span>: <span class="hljs-number">12</span>,
+    sendResponse.moveToLoading({
+      <span class="hljs-attr">headers</span>: {<span class="hljs-string">&quot;content-type&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span>},
+      <span class="hljs-attr">status</span>: <span class="hljs-number">200</span>,
+      <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>,
+      <span class="hljs-attr">responseText</span>: <span class="hljs-string">&quot;{&#x27;result&#x27;:&quot;</span>
     });
 
-    callbackForRequest({
+    sendResponse({
+      <span class="hljs-attr">ajaxType</span>: <span class="hljs-string">&quot;xhr&quot;</span>,
       <span class="hljs-attr">status</span>: <span class="hljs-number">200</span>,
       <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>,
       <span class="hljs-attr">headers</span>: {<span class="hljs-string">&quot;content-type&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span>},
-      <span class="hljs-attr">body</span>: <span class="hljs-string">&quot;{&#x27;result&#x27;:3}&quot;</span>
+      <span class="hljs-attr">response</span>: {<span class="hljs-attr">result</span>: <span class="hljs-number">3</span>},
+      <span class="hljs-attr">responseType</span>: <span class="hljs-string">&quot;json&quot;</span>,
+      <span class="hljs-attr">responseText</span>: <span class="hljs-string">&quot;{&#x27;result&#x27;:3}&quot;</span>,
     });
   }
 });</code></pre>
@@ -148,7 +154,7 @@
 						<ul class="tsd-parameters">
 							<li class="tsd-parameter-signature">
 								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-alias">
-									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><a href="interfaces/response.html" class="tsd-signature-type">Response</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">unknown</span></li>
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">ResponseByFetch</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">unknown</span></li>
 								</ul>
 								<ul class="tsd-descriptions">
 									<li class="tsd-description">
@@ -159,10 +165,15 @@
 											<dl class="tsd-comment-tags">
 												<dt>example</dt>
 												<dd><pre><code class="language-js"> <span class="hljs-keyword">var</span> dummyResponse = {
+   <span class="hljs-attr">ajaxType</span>: <span class="hljs-string">&quot;fetch&quot;</span>,
    <span class="hljs-attr">status</span>: <span class="hljs-number">200</span>,
    <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>,
    <span class="hljs-attr">headers</span>: {<span class="hljs-string">&quot;content-type&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span>},
-   <span class="hljs-attr">body</span>: <span class="hljs-string">&quot;{&#x27;result&#x27;:3}&quot;</span>
+   <span class="hljs-attr">ok</span>: <span class="hljs-literal">true</span>,
+   <span class="hljs-attr">redirected</span>: <span class="hljs-literal">false</span>,
+   <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;basic&quot;</span>,
+   <span class="hljs-attr">body</span>: <span class="hljs-string">&quot;{&#x27;result&#x27;:3&quot;</span>,
+   <span class="hljs-attr">url</span>: <span class="hljs-string">&quot;https://...&quot;</span>
  };
 
  callbackForRequest(dummyResponse);</code></pre>
@@ -172,7 +183,7 @@
 										<h4 class="tsd-parameters-title">Parameters</h4>
 										<ul class="tsd-parameters">
 											<li>
-												<h5>dummyResponse: <a href="interfaces/response.html" class="tsd-signature-type">Response</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
+												<h5>dummyResponse: <span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">ResponseByFetch</span></h5>
 											</li>
 										</ul>
 										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">unknown</span></h4>
@@ -180,33 +191,32 @@
 								</ul>
 							</li>
 							<li class="tsd-parameter">
-								<h5>move<wbr>ToHeader<wbr>Received<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><a href="interfaces/response.html" class="tsd-signature-type">Response</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></h5>
+								<h5>move<wbr>ToHeader<wbr>Received<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">"headers"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"status"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"statusText"</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">never</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></h5>
 								<div class="tsd-comment tsd-typography">
 									<div class="lead">
-										<p>Move readyState to HEADERS_RECEIVED.</p>
+										<p>Move readyState to HEADERS_RECEIVED. This is only effective for xhr response.</p>
 									</div>
 									<dl class="tsd-comment-tags">
 										<dt>example</dt>
-										<dd><pre><code class="language-js"> <span class="hljs-keyword">var</span> intermediateResponse = {
-   <span class="hljs-attr">loaded</span>: <span class="hljs-number">0</span>,
-   <span class="hljs-attr">total</span>: <span class="hljs-number">12</span>,
- };
-
- callbackForRequest.moveToHeaderReceived(intermediateResponse);</code></pre>
+										<dd><pre><code class="language-js">callbackForRequest.moveToHeaderReceived({
+  <span class="hljs-attr">headers</span>: {<span class="hljs-string">&quot;content-type&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span>},
+  <span class="hljs-attr">status</span>: <span class="hljs-number">200</span>,
+  <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>,
+});</code></pre>
 										</dd>
 									</dl>
 								</div>
 								<ul class="tsd-parameters">
 									<li class="tsd-parameter-signature">
 										<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-variable">
-											<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><a href="interfaces/response.html" class="tsd-signature-type">Response</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+											<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">"headers"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"status"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"statusText"</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">never</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 										</ul>
 										<ul class="tsd-descriptions">
 											<li class="tsd-description">
 												<h4 class="tsd-parameters-title">Parameters</h4>
 												<ul class="tsd-parameters">
 													<li>
-														<h5>dummyResponse: <a href="interfaces/response.html" class="tsd-signature-type">Response</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
+														<h5>dummyResponse: <span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">"headers"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"status"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"statusText"</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">never</span></h5>
 													</li>
 												</ul>
 												<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -216,33 +226,33 @@
 								</ul>
 							</li>
 							<li class="tsd-parameter">
-								<h5>move<wbr>ToLoading<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><a href="interfaces/response.html" class="tsd-signature-type">Response</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></h5>
+								<h5>move<wbr>ToLoading<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">"headers"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"status"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"statusText"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"responseText"</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">never</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></h5>
 								<div class="tsd-comment tsd-typography">
 									<div class="lead">
-										<p>Move readyState to LOADING.</p>
+										<p>Move readyState to LOADING. This is only effective for xhr response.</p>
 									</div>
 									<dl class="tsd-comment-tags">
 										<dt>example</dt>
-										<dd><pre><code class="language-js"> <span class="hljs-keyword">var</span> intermediateResponse = {
-   <span class="hljs-attr">loaded</span>: <span class="hljs-number">12</span>,
-   <span class="hljs-attr">total</span>: <span class="hljs-number">12</span>,
- };
-
- callbackForRequest.moveToLoading(intermediateResponse);</code></pre>
+										<dd><pre><code class="language-js">callbackForRequest.moveToLoading({
+   <span class="hljs-attr">headers</span>: {<span class="hljs-string">&quot;content-type&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span>},
+   <span class="hljs-attr">status</span>: <span class="hljs-number">200</span>,
+   <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>,
+   <span class="hljs-attr">responseText</span>: <span class="hljs-string">&quot;{&#x27;result&#x27;:&quot;</span>
+ });</code></pre>
 										</dd>
 									</dl>
 								</div>
 								<ul class="tsd-parameters">
 									<li class="tsd-parameter-signature">
 										<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-variable">
-											<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><a href="interfaces/response.html" class="tsd-signature-type">Response</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+											<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>dummyResponse<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">"headers"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"status"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"statusText"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"responseText"</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">never</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 										</ul>
 										<ul class="tsd-descriptions">
 											<li class="tsd-description">
 												<h4 class="tsd-parameters-title">Parameters</h4>
 												<ul class="tsd-parameters">
 													<li>
-														<h5>dummyResponse: <a href="interfaces/response.html" class="tsd-signature-type">Response</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h5>
+														<h5>dummyResponse: <span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">"headers"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"status"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"statusText"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"responseText"</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">never</span></h5>
 													</li>
 												</ul>
 												<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -260,7 +270,7 @@
 					<div class="tsd-signature tsd-kind-icon">Callback<wbr>For<wbr>Response&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>modifiedResponse<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">ResponseByFetch</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">unknown</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Hinaser/xspy/blob/f928062/src/index.type.ts#L132">src/index.type.ts:132</a></li>
+							<li>Defined in <a href="https://github.com/Hinaser/xspy/blob/004561b/src/index.type.ts#L170">src/index.type.ts:170</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -279,9 +289,13 @@
   }
   <span class="hljs-keyword">else</span>{
     <span class="hljs-keyword">var</span> modifiedResponse = {
+      ...response,
       <span class="hljs-attr">status</span>: <span class="hljs-number">400</span>,
       <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;Bad Request&quot;</span>
     };
+    <span class="hljs-keyword">if</span>(response.ajaxType === <span class="hljs-string">&quot;fetch&quot;</span>){
+      modifiedResponse.ok = <span class="hljs-literal">false</span>;
+    }
     callbackForResponse(modifiedResponse);
   }
 });</code></pre>
@@ -322,12 +336,12 @@
 					<div class="tsd-signature tsd-kind-icon">Listener<wbr>For<wbr>Request&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>this<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">XMLHttpRequest</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">unknown</span>, request<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">RequestByXHR</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">RequestByFetch</span>, sendResponse<span class="tsd-signature-symbol">?: </span><a href="globals.html#callbackforrequest" class="tsd-signature-type">CallbackForRequest</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">unknown</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Hinaser/xspy/blob/f928062/src/index.type.ts#L104">src/index.type.ts:104</a></li>
+							<li>Defined in <a href="https://github.com/Hinaser/xspy/blob/004561b/src/index.type.ts#L138">src/index.type.ts:138</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Listen on XHR/fetch request to be dispatched from user script and modify/view request as you like.
+							<p>Listen XHR/fetch request to be dispatched from user script and modify/view request as you like.
 							This listener behaves differently when defined as 1 parameter function or 2 parameters function.</p>
 						</div>
 						<p>When second parameter <code>sendResponse</code> is specified as a function argument,
@@ -345,7 +359,31 @@
 							<dd><p>Return fake response after waiting 3000ms</p>
 								<pre><code class="language-js">xspy.onRequest(<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">listenerForRequest</span>(<span class="hljs-params">request, sendResponse</span>)</span>{
   <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
-    <span class="hljs-keyword">var</span> response = {<span class="hljs-attr">status</span>: <span class="hljs-number">200</span>, <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>};
+    <span class="hljs-keyword">var</span> response = {
+      <span class="hljs-attr">status</span>: <span class="hljs-number">200</span>,
+      <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>,
+      <span class="hljs-attr">headers</span>: {<span class="hljs-string">&quot;content-type&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span>},
+    };
+
+    <span class="hljs-keyword">if</span>(request.ajaxType === <span class="hljs-string">&quot;xhr&quot;</span>){
+      response = {
+        <span class="hljs-attr">ajaxType</span>: <span class="hljs-string">&quot;xhr&quot;</span>,
+        <span class="hljs-attr">response</span>: {<span class="hljs-attr">result</span>: <span class="hljs-number">3</span>},
+        <span class="hljs-attr">responseType</span>: <span class="hljs-string">&quot;json&quot;</span>,
+        <span class="hljs-attr">responseText</span>: <span class="hljs-string">&quot;{&#x27;result&#x27;:3}&quot;</span>,
+      };
+    }
+    <span class="hljs-keyword">else</span>{ <span class="hljs-comment">// ajaxType === &quot;fetch&quot;</span>
+      response = {
+        <span class="hljs-attr">ajaxType</span>: <span class="hljs-string">&quot;fetch&quot;</span>,
+        <span class="hljs-attr">ok</span>: <span class="hljs-literal">true</span>,
+        <span class="hljs-attr">redirected</span>: <span class="hljs-literal">false</span>,
+        <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;basic&quot;</span>,
+        <span class="hljs-attr">body</span>: <span class="hljs-string">&quot;{&#x27;result&#x27;:3}&quot;</span>,
+        <span class="hljs-attr">url</span>: <span class="hljs-string">&quot;https://...&quot;</span>
+      };
+    }
+
     sendResponse(response); <span class="hljs-comment">// after 3000ms elapses, send fake response.</span>
   }, <span class="hljs-number">3000</span>);
 });</code></pre>
@@ -392,7 +430,7 @@
 					<div class="tsd-signature tsd-kind-icon">Listener<wbr>For<wbr>Response&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>this<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">XMLHttpRequest</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">unknown</span>, request<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">RequestByXHR</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">RequestByFetch</span>, response<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">"xhr"</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">ResponseByXHR</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">ResponseByFetch</span>, next<span class="tsd-signature-symbol">?: </span><a href="globals.html#callbackforresponse" class="tsd-signature-type">CallbackForResponse</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">unknown</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Hinaser/xspy/blob/f928062/src/index.type.ts#L162">src/index.type.ts:162</a></li>
+							<li>Defined in <a href="https://github.com/Hinaser/xspy/blob/004561b/src/index.type.ts#L203">src/index.type.ts:203</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -416,8 +454,11 @@
 							<dd><p>Return response after waiting 3000ms</p>
 								<pre><code class="language-js">xspy.onResponse(<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">listenerForResponse</span>(<span class="hljs-params">request, response, next</span>)</span>{
   <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
-    <span class="hljs-keyword">var</span> response = {<span class="hljs-attr">status</span>: <span class="hljs-number">200</span>, <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>};
-    next(response); <span class="hljs-comment">// after 3000ms elapses, send the response.</span>
+    <span class="hljs-keyword">var</span> modifiedResponse = {...response, <span class="hljs-attr">status</span>: <span class="hljs-number">200</span>, <span class="hljs-attr">statusText</span>: <span class="hljs-string">&quot;OK&quot;</span>};
+    <span class="hljs-keyword">if</span>(response.ajaxType === <span class="hljs-string">&quot;fetch&quot;</span>){
+      modifiedResponse.ok = <span class="hljs-literal">true</span>;
+    }
+    next(modifiedResponse); <span class="hljs-comment">// after 3000ms elapses, send the response.</span>
   }, <span class="hljs-number">3000</span>);
 });</code></pre>
 							</dd>
