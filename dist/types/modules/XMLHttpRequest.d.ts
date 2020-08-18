@@ -27,7 +27,7 @@ export declare class XHRProxy implements XMLHttpRequest {
     statusText: string;
     timeout: number;
     readonly upload: XMLHttpRequestUpload;
-    response: BodyInit | Document | null | undefined;
+    response: BodyInit | Document | null | undefined | Record<string, unknown>;
     responseType: XMLHttpRequestResponseType;
     responseURL: string;
     get responseText(): string;

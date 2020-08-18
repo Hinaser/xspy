@@ -177,14 +177,39 @@ export class XSpy {
    *   request.method = "POST";
    *   request.url = "...";
    *   ...
+   *   return;
    * });
    * ```
    *
    * @example Return fake response after waiting 3000ms
    * ```js
-   * xspy.onRequest(function (request, sendResponse){
+   * xspy.onRequest(function listenerForRequest(request, sendResponse){
    *   setTimeout(function(){
-   *     var response = {status: 200, statusText: "OK"};
+   *     var response = {
+   *       status: 200,
+   *       statusText: "OK",
+   *       headers: {"content-type": "application/json"},
+   *     };
+   *   
+   *     if(request.ajaxType === "xhr"){
+   *       response = {
+   *         ajaxType: "xhr",
+   *         response: {result: 3},
+   *         responseType: "json",
+   *         responseText: "{'result':3}",
+   *       };
+   *     }
+   *     else{ // ajaxType === "fetch"
+   *       response = {
+   *         ajaxType: "fetch",
+   *         ok: true,
+   *         redirected: false,
+   *         type: "basic",
+   *         body: "{'result':3}",
+   *         url: "https://..."
+   *       };
+   *     }
+   *     
    *     sendResponse(response); // after 3000ms elapses, send fake response.
    *   }, 3000);
    * });
@@ -195,7 +220,7 @@ export class XSpy {
    * xspy.onRequest(async (request, sendResponse) => {
    *   var result = await someAsyncOperation();
    *   
-   *   var response = {status: 200, statusText: "OK", body: result};
+   *   var response = {...};
    *   sendResponse(response);
    * });
    * ```
@@ -250,10 +275,13 @@ export class XSpy {
    *
    * @example Return response after waiting 3000ms
    * ```js
-   * xspy.onResponse(function (request, response, next){
+   * xspy.onResponse(function listenerForResponse(request, response, next){
    *   setTimeout(function(){
-   *     var response = {status: 200, statusText: "OK"};
-   *     next(response); // after 3000ms elapses, send the response.
+   *     var modifiedResponse = {...response, status: 200, statusText: "OK"};
+   *     if(response.ajaxType === "fetch"){
+   *       modifiedResponse.ok = true;
+   *     }
+   *     next(modifiedResponse); // after 3000ms elapses, send the response.
    *   }, 3000);
    * });
    * ```
@@ -263,7 +291,7 @@ export class XSpy {
    * xspy.onResponse(async (request, response, next) => {
    *   var result = await someAsyncOperation();
    *   
-   *   var response = {status: 200, statusText: "OK", body: result};
+   *   var response = {...};
    *   next(response);
    * });
    * ```

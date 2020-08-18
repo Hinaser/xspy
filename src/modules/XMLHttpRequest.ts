@@ -35,7 +35,7 @@ export class XHRProxy implements XMLHttpRequest {
   public timeout: number = 0;
   public readonly upload = this._xhr.upload;
   
-  public response: BodyInit|Document|null|undefined = "";
+  public response: BodyInit|Document|null|undefined|Record<string, unknown> = "";
   public responseType: XMLHttpRequestResponseType = "";
   public responseURL: string = "";
   public get responseText(): string {

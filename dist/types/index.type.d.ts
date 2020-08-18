@@ -6,23 +6,29 @@
  *
  * @example Return fake response step by step with simulating loading.
  * ```js
- * xspy.onRequest(function listenerForRequest(request, callbackForRequest){
- *   if(request.ajaxType === "fetch"){
- *     callbackForRequest.moveToHeaderReceived({
- *       loaded: 0,
- *       total: 12,
+ * xspy.onRequest(function listenerForRequest(request, sendResponse){
+ *   if(request.ajaxType === "xhr"){
+ *     sendResponse.moveToHeaderReceived({
+ *       headers: {"content-type": "application/json"},
+ *       status: 200,
+ *       statusText: "OK",
  *     });
  *
- *     callbackForRequest.moveToLoading({
- *       loaded: 12,
- *       total: 12,
+ *     sendResponse.moveToLoading({
+ *       headers: {"content-type": "application/json"},
+ *       status: 200,
+ *       statusText: "OK",
+ *       responseText: "{'result':"
  *     });
  *
- *     callbackForRequest({
+ *     sendResponse({
+ *       ajaxType: "xhr",
  *       status: 200,
  *       statusText: "OK",
  *       headers: {"content-type": "application/json"},
- *       body: "{'result':3}"
+ *       response: {result: 3},
+ *       responseType: "json",
+ *       responseText: "{'result':3}",
  *     });
  *   }
  * });
@@ -35,47 +41,51 @@ export declare type CallbackForRequest<T extends "xhr" | "fetch"> = {
      * @example
      * ```js
      *  var dummyResponse = {
+     *    ajaxType: "fetch",
      *    status: 200,
      *    statusText: "OK",
      *    headers: {"content-type": "application/json"},
-     *    body: "{'result':3}"
+     *    ok: true,
+     *    redirected: false,
+     *    type: "basic",
+     *    body: "{'result':3",
+     *    url: "https://..."
      *  };
      *
      *  callbackForRequest(dummyResponse);
      * ```
      */
-    (dummyResponse: Response<T>): unknown;
+    (dummyResponse: T extends "xhr" ? ResponseByXHR : ResponseByFetch): unknown;
     /**
-     * Move readyState to HEADERS_RECEIVED.
+     * Move readyState to HEADERS_RECEIVED. This is only effective for xhr response.
      *
      * @example
      * ```js
-     *  var intermediateResponse = {
-     *    loaded: 0,
-     *    total: 12,
-     *  };
-     *
-     *  callbackForRequest.moveToHeaderReceived(intermediateResponse);
+     * callbackForRequest.moveToHeaderReceived({
+     *   headers: {"content-type": "application/json"},
+     *   status: 200,
+     *   statusText: "OK",
+     * });
      * ```
      */
-    moveToHeaderReceived: (dummyResponse: Response<T>) => void;
+    moveToHeaderReceived: (dummyResponse: T extends "xhr" ? Pick<ResponseByXHR, "headers" | "status" | "statusText"> : never) => void;
     /**
-     * Move readyState to LOADING.
+     * Move readyState to LOADING. This is only effective for xhr response.
      *
      * @example
      * ```js
-     *  var intermediateResponse = {
-     *    loaded: 12,
-     *    total: 12,
-     *  };
-     *
-     *  callbackForRequest.moveToLoading(intermediateResponse);
+     * callbackForRequest.moveToLoading({
+     *    headers: {"content-type": "application/json"},
+     *    status: 200,
+     *    statusText: "OK",
+     *    responseText: "{'result':"
+     *  });
      * ```
      */
-    moveToLoading: (dummyResponse: Response<T>) => void;
+    moveToLoading: (dummyResponse: T extends "xhr" ? Pick<ResponseByXHR, "headers" | "status" | "statusText" | "responseText"> : never) => void;
 };
 /**
- * Listen on XHR/fetch request to be dispatched from user script and modify/view request as you like.
+ * Listen XHR/fetch request to be dispatched from user script and modify/view request as you like.
  * This listener behaves differently when defined as 1 parameter function or 2 parameters function.
  *
  * When second parameter `sendResponse` is specified as a function argument,
@@ -94,7 +104,31 @@ export declare type CallbackForRequest<T extends "xhr" | "fetch"> = {
  * ```js
  * xspy.onRequest(function listenerForRequest(request, sendResponse){
  *   setTimeout(function(){
- *     var response = {status: 200, statusText: "OK"};
+ *     var response = {
+ *       status: 200,
+ *       statusText: "OK",
+ *       headers: {"content-type": "application/json"},
+ *     };
+ *
+ *     if(request.ajaxType === "xhr"){
+ *       response = {
+ *         ajaxType: "xhr",
+ *         response: {result: 3},
+ *         responseType: "json",
+ *         responseText: "{'result':3}",
+ *       };
+ *     }
+ *     else{ // ajaxType === "fetch"
+ *       response = {
+ *         ajaxType: "fetch",
+ *         ok: true,
+ *         redirected: false,
+ *         type: "basic",
+ *         body: "{'result':3}",
+ *         url: "https://..."
+ *       };
+ *     }
+ *
  *     sendResponse(response); // after 3000ms elapses, send fake response.
  *   }, 3000);
  * });
@@ -115,9 +149,13 @@ export declare type ListenerForRequest<T extends "xhr" | "fetch"> = (this: T ext
  *   }
  *   else{
  *     var modifiedResponse = {
+ *       ...response,
  *       status: 400,
  *       statusText: "Bad Request"
  *     };
+ *     if(response.ajaxType === "fetch"){
+ *       modifiedResponse.ok = false;
+ *     }
  *     callbackForResponse(modifiedResponse);
  *   }
  * });
@@ -145,8 +183,11 @@ export declare type CallbackForResponse<T extends "xhr" | "fetch"> = (modifiedRe
  * ```js
  * xspy.onResponse(function listenerForResponse(request, response, next){
  *   setTimeout(function(){
- *     var response = {status: 200, statusText: "OK"};
- *     next(response); // after 3000ms elapses, send the response.
+ *     var modifiedResponse = {...response, status: 200, statusText: "OK"};
+ *     if(response.ajaxType === "fetch"){
+ *       modifiedResponse.ok = true;
+ *     }
+ *     next(modifiedResponse); // after 3000ms elapses, send the response.
  *   }, 3000);
  * });
  * ```
@@ -282,7 +323,7 @@ export interface Response<T extends "xhr" | "fetch"> {
      *
      * BodyInit: Blob | BufferSource | FormData | URLSearchParams | ReadableStream\<Uint8Array\> | string
      */
-    body?: T extends "xhr" ? BodyInit | null | Document : BodyInit | null;
+    body?: T extends "xhr" ? BodyInit | null | Document | Record<string, unknown> : BodyInit | null;
 }
 /**
  * Request object properties only for `XMLHttpRequest`.
@@ -293,7 +334,7 @@ export interface ResponseByXHR extends Response<"xhr"> {
     /** @see https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseType */
     responseType: XMLHttpRequestResponseType;
     /** @see https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/response */
-    response?: BodyInit | null | Document;
+    response?: BodyInit | null | Document | Record<string, unknown>;
     /** @see https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseText */
     responseText?: string;
     /** @see https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseXML */
