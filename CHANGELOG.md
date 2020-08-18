@@ -2,13 +2,16 @@
 
 <!-- ## [Unreleased] -->
 
-## [0.0.3] - 2020-08-17
+## [0.0.3] - 2020-08-18
 
-Only jsdoc and documentation improvements.
+### Added
+- Added jsdoc annotations to all public APIs. Type hints/completions is now more descriptive.
 
 ### Changed
-- Added jsdoc annotations to all public APIs. Type hints/completions is now more descriptive.
 - Changed internal class name.
+
+### Fixed
+- Fixed incorrect type definitions
 
 ## [0.0.2] - 2020-08-15
 
