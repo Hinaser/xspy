@@ -1,6 +1,6 @@
 {
   "name": "xspy",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "./dist/xspy.es5.min.js",
   "types": "./dist/types",
   "author": "Izumi Hoshino <rindo.hinase@gmail.com>",
