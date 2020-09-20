@@ -33,12 +33,13 @@ npm install xspy -- OR yarn add xspy
 ```
 #### CommonJS
 ```js
-const xspy = require("xspy").default;
+const xspy = require("xspy");
 ```
 #### Typescript
 ```typescript
 import xspy from "xspy";
 ```
+* If you encounter an import error, please set `"moduleResolution": "node"` in `tsconfig.json`.
 
 ## Example
 
